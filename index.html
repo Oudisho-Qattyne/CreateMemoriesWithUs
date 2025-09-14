@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -52,12 +53,14 @@
             color: white;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
+
         .graduation-card h1 {
             font-size: 50px;
             margin-bottom: 25px;
             color: white;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
+
         .graduation-card p {
             font-size: 18px;
             line-height: 1.6;
@@ -88,8 +91,15 @@
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         .confetti {
@@ -169,7 +179,8 @@
 
         /* Front camera view (no mirroring) */
         .front-camera #video {
-            transform: scaleX(1); /* Remove mirror effect */
+            transform: scaleX(-1);
+            /* Remove mirror effect */
         }
 
         /* Camera controls */
@@ -331,13 +342,16 @@
             border: none;
             color: white;
             font-size: 50px;
-            /* padding: 10px; */
+            touch-action: manipulation;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .preview-btn.confirm {
             background: rgba(255, 255, 255, 0.9);
             color: black;
         }
+
 
         .preview-btn:disabled {
             opacity: 0.5;
@@ -460,8 +474,13 @@
         }
 
         @keyframes spinner {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         /* Overlay to prevent interactions during upload */
@@ -486,7 +505,8 @@
         <h2>حفل تخرج </h2>
         <h1>نايا زيدان زيدان</h1>
         <p>
-           لنلتقط أجمل لحظاتنا الجميلة اليوم ولنحتفظ بذكريات لا تُنسى تدوم مدى الحياة، ولنتشارك هذه اللحظات معاً لنزيد من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!!</p>
+            لنلتقط أجمل لحظاتنا الجميلة اليوم ولنحتفظ بذكريات لا تُنسى تدوم مدى الحياة، ولنتشارك هذه اللحظات معاً لنزيد
+            من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!!</p>
         <button class="close-btn" id="closeGraduationCard">Continue to Camera</button>
     </div>
 
@@ -507,7 +527,9 @@
         <!-- Camera controls -->
         <div class="camera-controls">
             <div class="gallery-preview" id="galleryPreview">
-                <img id="lastPhoto" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23333'/%3E%3Cpath d='M30 20L40 35H20L30 20Z' fill='%23555'/%3E%3C/svg%3E" alt="Last photo">
+                <img id="lastPhoto"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' fill='%23333'/%3E%3Cpath d='M30 20L40 35H20L30 20Z' fill='%23555'/%3E%3C/svg%3E"
+                    alt="Last photo">
             </div>
 
             <button id="captureBtn" class="shutter-button"></button>
@@ -570,27 +592,27 @@
             if (!localStorage.getItem('graduationMessageSeen')) {
                 graduationCard.classList.add('visible');
                 createConfetti();
-                
+
                 // Auto-hide after 8 seconds
                 setTimeout(() => {
                     hideGraduationCard();
                 }, 30000);
-                
+
                 // Mark as seen
                 localStorage.setItem('graduationMessageSeen', 'true');
             }
         }
-        
+
         // Hide graduation card
         function hideGraduationCard() {
             graduationCard.classList.remove('visible');
         }
-        
+
         // Create confetti effect
         function createConfetti() {
             const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
             const container = document.body;
-            
+
             for (let i = 0; i < 50; i++) {
                 const confetti = document.createElement('div');
                 confetti.className = 'confetti';
@@ -601,7 +623,7 @@
                 confetti.style.height = (5 + Math.random() * 10) + 'px';
                 confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
                 container.appendChild(confetti);
-                
+
                 // Animate confetti
                 const animation = confetti.animate([
                     { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
@@ -610,7 +632,7 @@
                     duration: 3000 + Math.random() * 3000,
                     easing: 'cubic-bezier(0.1, 0.8, 0.1, 1)',
                 });
-                
+
                 // Remove confetti after animation completes
                 animation.onfinish = () => {
                     confetti.remove();
@@ -637,7 +659,7 @@
                 });
 
                 video.srcObject = stream;
-                
+
                 // Apply front camera class if needed (remove mirroring)
                 if (facingMode === 'user') {
                     cameraViewfinder.classList.add('front-camera');
@@ -663,7 +685,7 @@
             } else {
                 statusMessage.style.background = 'rgba(0, 0, 0, 0.5)';
             }
-            
+
             setTimeout(() => {
                 statusMessage.style.display = 'none';
             }, 3000);
@@ -689,7 +711,7 @@
             isUploading = true;
             loadingSpinner.style.display = 'block';
             uploadOverlay.style.display = 'block';
-            
+
             // Disable all interactive elements
             captureBtn.disabled = true;
             cameraSwitch.disabled = true;
@@ -702,7 +724,7 @@
             isUploading = false;
             loadingSpinner.style.display = 'none';
             uploadOverlay.style.display = 'none';
-            
+
             // Re-enable interactive elements
             captureBtn.disabled = false;
             cameraSwitch.disabled = false;
@@ -713,7 +735,7 @@
         // Capture photo
         function capturePhoto() {
             if (isUploading) return;
-            
+
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -740,11 +762,11 @@
         // Save photo to server
         async function savePhoto() {
             if (isUploading) return;
-            
+
             try {
                 showLoading();
                 showStatus('Uploading...');
-                 const blob = await fetch(currentPhoto).then(r => r.blob());
+                const blob = await fetch(currentPhoto).then(r => r.blob());
                 const formData = new FormData();
                 formData.append('photo', blob, `photo_${Date.now()}.jpg`);
 
@@ -758,7 +780,7 @@
                     // Update the gallery preview
                     lastPhoto.src = currentPhoto;
                     showStatus('Photo saved successfully!');
-                    
+
                     // Hide preview after a short delay
                     setTimeout(() => {
                         previewContainer.classList.remove('active');
@@ -778,7 +800,7 @@
         // Switch between front and back camera
         async function switchCamera() {
             if (isUploading) return;
-            
+
             facingMode = facingMode === 'environment' ? 'user' : 'environment';
             await initCamera();
         }
@@ -812,4 +834,5 @@
         window.addEventListener('orientationchange', initCamera);
     </script>
 </body>
+
 </html>
