@@ -48,7 +48,7 @@ app.use('/uploads', express.static('uploads'));
 
 // Routes
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'camera.html'));
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 app.get('/gallery', (req, res) => {
@@ -145,5 +145,4 @@ app.delete('/photos', (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`📸 Simplified Camera App running on http://localhost:${PORT}`);
 });

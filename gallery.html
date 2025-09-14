@@ -3,267 +3,564 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Photo Gallery</title>
+    <title>Photos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #fff;
+            color: #000;
+            overflow: hidden;
+            height: 100vh;
         }
         
-        .gallery-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        /* iOS Status Bar */
+        .status-bar {
+            height: 44px;
+            background: #f8f8f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            border-bottom: 1px solid #e6e6e6;
         }
         
+        .status-bar-time {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        /* Navigation Header */
         .gallery-header {
+            height: 60px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #ddd;
+            padding: 0 16px;
+            background: #f8f8f8;
+            border-bottom: 1px solid #e6e6e6;
         }
         
-        .gallery-title {
-            font-size: 24px;
-            font-weight: 600;
+        .header-title {
+            font-size: 22px;
+            font-weight: 700;
         }
         
-        .gallery-controls {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .control-btn {
-            padding: 10px 15px;
+        .header-button {
+            background: none;
             border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #007AFF;
+            padding: 8px 12px;
         }
         
-        .back-btn {
-            background: #666;
-            color: white;
+        .header-button.danger {
+            color: #FF3B30;
         }
         
-        .download-btn {
-            background: #007AFF;
-            color: white;
-        }
-        
-        .delete-btn {
-            background: #FF3B30;
-            color: white;
-        }
-        
+        /* Photos Grid */
         .photos-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2px;
+            padding: 2px;
+            height: calc(100vh - 104px);
+            overflow-y: auto;
         }
         
-        .photo-card {
-            background: white;
-            border-radius: 10px;
+        .photo-item {
+            aspect-ratio: 1/1;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             transition: transform 0.2s;
         }
         
-        .photo-card:hover {
-            transform: translateY(-5px);
+        .photo-item.selected img {
+            opacity: 0.7;
         }
         
-        .photo-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
+        .photo-item:active img {
+            transform: scale(0.95);
         }
         
-        .photo-info {
-            padding: 15px;
-        }
-        
-        .photo-name {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .photo-date {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-        
-        .photo-actions {
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .action-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        
-        .download-single-btn {
+        .selection-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
             background: #007AFF;
             color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 500;
+            border: 2px solid white;
+            display: none;
         }
         
+        .photo-item.selected .selection-badge {
+            display: flex;
+        }
+        
+        /* Empty State */
         .no-photos {
+            height: calc(100vh - 104px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
             text-align: center;
-            padding: 50px;
-            color: #666;
+            color: #8E8E93;
+        }
+        
+        .no-photos i {
+            font-size: 60px;
+            margin-bottom: 16px;
+            color: #C5C5C7;
         }
         
         .no-photos p {
             font-size: 18px;
             margin-bottom: 20px;
+            font-weight: 500;
         }
         
-        .camera-link {
-            display: inline-block;
-            padding: 12px 24px;
+        .no-photos button {
             background: #007AFF;
             color: white;
-            text-decoration: none;
-            border-radius: 8px;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        /* Selection Mode */
+        .selection-mode {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: #f8f8f8;
+            border-top: 1px solid #e6e6e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .selection-mode.active {
+            transform: translateY(0);
+        }
+        
+        .selection-count {
+            font-size: 16px;
+            font-weight: 500;
+        }
+        
+        .selection-actions {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .selection-action {
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #007AFF;
+        }
+        
+        .selection-action:disabled {
+            color: #8E8E93;
+            opacity: 0.5;
+        }
+        
+        /* Loading State */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #8E8E93;
             font-size: 16px;
         }
         
-        .loading {
-            text-align: center;
-            padding: 30px;
-            font-size: 18px;
-            color: #666;
+        /* Photo Detail Modal */
+        .photo-detail {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .photo-detail.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .detail-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 10;
+        }
+        
+        .detail-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            color: white;
+        }
+        
+        .detail-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .detail-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        
+        .detail-action {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            color: white;
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
-    <div class="gallery-container">
-        <div class="gallery-header">
-            <h1 class="gallery-title">Photo Gallery</h1>
-            <div class="gallery-controls">
-                <button class="control-btn back-btn" onclick="window.location.href='/'">
-                    ← Back to Camera
-                </button>
-                <button class="control-btn download-btn" onclick="downloadAll()">
-                    ⬇ Download All
-                </button>
-                <button class="control-btn delete-btn" onclick="clearAll()">
-                    🗑 Delete All
-                </button>
-            </div>
+    <!-- iOS Status Bar -->
+   
+    <!-- Gallery Header -->
+    <div class="gallery-header">
+        <button class="header-button" onclick="window.location.href='/'">
+            <i class="fas fa-chevron-left"></i> Back
+        </button>
+        <div class="header-title">Photos</div>
+        <button class="header-button" id="selectButton">Select</button>
+    </div>
+    
+    <!-- Photos Grid -->
+    <div class="photos-grid" id="photosGrid">
+        <div class="loading">Loading photos...</div>
+    </div>
+    
+    <!-- Empty State -->
+    <div class="no-photos" id="noPhotos" style="display: none;">
+        <i class="fas fa-camera"></i>
+        <p>No Photos Yet</p>
+        <button onclick="window.location.href='/'">Take Some Photos</button>
+    </div>
+    
+    <!-- Selection Mode Footer -->
+    <div class="selection-mode" id="selectionMode">
+        <div class="selection-count" id="selectionCount">0 Selected</div>
+        <div class="selection-actions">
+            <button class="selection-action" id="downloadSelected" disabled>Download</button>
+            <!-- <button class="selection-action danger" id="deleteSelected" disabled>Delete</button> -->
         </div>
-        
-        <div id="photosGrid" class="photos-grid">
-            <div class="loading">Loading photos...</div>
+    </div>
+    
+    <!-- Photo Detail View -->
+    <div class="photo-detail" id="photoDetail">
+        <div class="detail-header">
+            <button class="detail-back" onclick="closeDetail()">
+                <i class="fas fa-chevron-left"></i>
+            </button>
         </div>
-        
-        <div id="noPhotos" class="no-photos" style="display: none;">
-            <p>No photos yet! 📸</p>
-            <a href="/" class="camera-link">Take some photos</a>
+        <img class="detail-image" id="detailImage" src="" alt="">
+        <div class="detail-footer">
+            <button class="detail-action" onclick="downloadCurrentPhoto()">
+                <i class="fas fa-arrow-down"></i>
+            </button>
         </div>
     </div>
 
     <script>
+        // DOM Elements
         const photosGrid = document.getElementById('photosGrid');
         const noPhotos = document.getElementById('noPhotos');
+        const selectButton = document.getElementById('selectButton');
+        const selectionMode = document.getElementById('selectionMode');
+        const selectionCount = document.getElementById('selectionCount');
+        const downloadSelected = document.getElementById('downloadSelected');
+        const deleteSelected = document.getElementById('deleteSelected');
+        const photoDetail = document.getElementById('photoDetail');
+        const detailImage = document.getElementById('detailImage');
+        const currentTime = document.getElementById('currentTime');
         
-        // Load photos from server
+        // State variables
+        let photos = [];
+        let selectedPhotos = new Set();
+        let isSelectMode = false;
+        let currentDetailPhoto = null;
+        
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            currentTime.textContent = `${hours}:${minutes}`;
+        }
+        
+        setInterval(updateTime, 60000);
+        updateTime();
+        
+        // Load photos
         async function loadPhotos() {
             try {
+                photosGrid.innerHTML = '<div class="loading">Loading photos...</div>';
                 const response = await fetch('/photos');
-                const photos = await response.json();
+                photos = await response.json();
                 
                 if (photos.length === 0) {
                     photosGrid.style.display = 'none';
-                    noPhotos.style.display = 'block';
+                    noPhotos.style.display = 'flex';
                     return;
                 }
                 
-                photosGrid.innerHTML = '';
+                photosGrid.style.display = 'grid';
+                noPhotos.style.display = 'none';
                 
-                photos.forEach(photo => {
-                    const photoCard = document.createElement('div');
-                    photoCard.className = 'photo-card';
-                    
-                    photoCard.innerHTML = `
-                        <img src="${photo.url}" alt="${photo.filename}" class="photo-image">
-                        <div class="photo-info">
-                            <div class="photo-name">${photo.filename}</div>
-                            <div class="photo-date">${new Date(photo.timestamp).toLocaleString()}</div>
-                            <div class="photo-actions">
-                                <button class="action-btn download-single-btn" onclick="downloadPhoto('${photo.filename}')">
-                                    Download
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    
-                    photosGrid.appendChild(photoCard);
-                });
+                renderPhotos();
             } catch (error) {
-                photosGrid.innerHTML = '<div class="loading">Error loading photos. Please try again.</div>';
+                photosGrid.innerHTML = '<div class="error">Error loading photos</div>';
                 console.error('Error loading photos:', error);
             }
         }
         
-        // Download a single photo
-        function downloadPhoto(filename) {
-            window.open(`/download/${filename}`, '_blank');
+        // Render photos in grid
+        function renderPhotos() {
+            photosGrid.innerHTML = '';
+            
+            photos.forEach((photo, index) => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item';
+                if (selectedPhotos.has(index)) {
+                    photoItem.classList.add('selected');
+                }
+                
+                photoItem.innerHTML = `
+                    <img src="${photo.url}" alt="Photo" loading="lazy">
+                    <div class="selection-badge">${Array.from(selectedPhotos).indexOf(index) + 1}</div>
+                `;
+                
+                // Click handler for selection mode
+                photoItem.addEventListener('click', () => {
+                    if (isSelectMode) {
+                        toggleSelection(index);
+                    } else {
+                        viewPhoto(photo);
+                    }
+                });
+                
+                photosGrid.appendChild(photoItem);
+            });
         }
         
-        // Download all photos as a ZIP file
-        function downloadAll() {
-            window.open('/download-all', '_blank');
+        // Toggle selection of a photo
+        function toggleSelection(index) {
+            if (selectedPhotos.has(index)) {
+                selectedPhotos.delete(index);
+            } else {
+                selectedPhotos.add(index);
+            }
+            
+            updateSelectionUI();
         }
         
-        // Delete all photos
-        async function clearAll() {
-            if (!confirm('Are you sure you want to delete all photos? This cannot be undone.')) {
+        // Update selection UI
+        function updateSelectionUI() {
+            // Update selection count
+            selectionCount.textContent = `${selectedPhotos.size} Selected`;
+            
+            // Enable/disable buttons based on selection
+            downloadSelected.disabled = selectedPhotos.size === 0;
+            deleteSelected.disabled = selectedPhotos.size === 0;
+            
+            // Update badge numbers and selection state
+            const photoItems = document.querySelectorAll('.photo-item');
+            photoItems.forEach((item, index) => {
+                if (selectedPhotos.has(index)) {
+                    item.classList.add('selected');
+                    const badge = item.querySelector('.selection-badge');
+                    badge.textContent = Array.from(selectedPhotos).indexOf(index) + 1;
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+        
+        // Toggle selection mode
+        function toggleSelectionMode() {
+            isSelectMode = !isSelectMode;
+            
+            if (isSelectMode) {
+                selectButton.textContent = 'Cancel';
+                selectionMode.classList.add('active');
+                selectedPhotos.clear();
+                updateSelectionUI();
+            } else {
+                selectButton.textContent = 'Select';
+                selectionMode.classList.remove('active');
+                selectedPhotos.clear();
+                renderPhotos();
+            }
+        }
+        
+        // View photo in detail
+        function viewPhoto(photo) {
+            currentDetailPhoto = photo;
+            detailImage.src = photo.url;
+            photoDetail.classList.add('active');
+        }
+        
+        // Close detail view
+        function closeDetail() {
+            photoDetail.classList.remove('active');
+        }
+        
+        // Download current photo in detail view
+        function downloadCurrentPhoto() {
+            if (currentDetailPhoto) {
+                window.open(`/download/${currentDetailPhoto.filename}`, '_blank');
+            }
+        }
+        
+        // Download selected photos
+        async function downloadSelectedPhotos() {
+            if (selectedPhotos.size === 0) return;
+            
+            // For multiple selection, download as zip
+            if (selectedPhotos.size > 1) {
+                window.open('/download-all', '_blank');
+                return;
+            }
+            
+            // For single selection, download directly
+            const index = Array.from(selectedPhotos)[0];
+            window.open(`/download/${photos[index].filename}`, '_blank');
+        }
+        
+        // Delete selected photos
+        async function deleteSelectedPhotos() {
+            if (selectedPhotos.size === 0) return;
+            
+            if (!confirm(`Are you sure you want to delete ${selectedPhotos.size} photo(s)?`)) {
                 return;
             }
             
             try {
-                const response = await fetch('/photos', {
-                    method: 'DELETE'
-                });
-                
+                const response = await fetch('/photos', { method: 'DELETE' });
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('All photos have been deleted.');
+                    // Exit selection mode and reload photos
+                    toggleSelectionMode();
                     loadPhotos();
                 } else {
                     alert('Error deleting photos: ' + result.error);
                 }
             } catch (error) {
-                alert('Error deleting photos. Please try again.');
                 console.error('Error deleting photos:', error);
+                alert('Error deleting photos. Please try again.');
             }
         }
         
-        // Load photos when page loads
+        // Event listeners
+        selectButton.addEventListener('click', toggleSelectionMode);
+        downloadSelected.addEventListener('click', downloadSelectedPhotos);
+        deleteSelected.addEventListener('click', deleteSelectedPhotos);
+        
+        // Keyboard shortcuts for escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (photoDetail.classList.contains('active')) {
+                    closeDetail();
+                } else if (isSelectMode) {
+                    toggleSelectionMode();
+                }
+            }
+        });
+        
+        // Swipe to close detail view
+        let touchStartY = 0;
+        const detailImageEl = document.getElementById('detailImage');
+        if (detailImageEl) {
+            detailImageEl.addEventListener('touchstart', (e) => {
+                touchStartY = e.changedTouches[0].screenY;
+            });
+            
+            detailImageEl.addEventListener('touchend', (e) => {
+                const touchEndY = e.changedTouches[0].screenY;
+                if (touchEndY - touchStartY > 100) {
+                    closeDetail();
+                }
+            });
+        }
+        
+        // Load photos on page load
         window.addEventListener('load', loadPhotos);
     </script>
 </body>
