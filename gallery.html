@@ -291,7 +291,10 @@
 </head>
 <body>
     <!-- iOS Status Bar -->
-   
+    <div class="status-bar">
+        <div class="status-bar-time" id="currentTime">12:00</div>
+    </div>
+    
     <!-- Gallery Header -->
     <div class="gallery-header">
         <button class="header-button" onclick="window.location.href='/'">
@@ -345,7 +348,7 @@
         const selectionMode = document.getElementById('selectionMode');
         const selectionCount = document.getElementById('selectionCount');
         const downloadSelected = document.getElementById('downloadSelected');
-        const deleteSelected = document.getElementById('deleteSelected');
+        // const deleteSelected = document.getElementById('deleteSelected');
         const photoDetail = document.getElementById('photoDetail');
         const detailImage = document.getElementById('detailImage');
         const currentTime = document.getElementById('currentTime');
@@ -531,7 +534,7 @@
         // Event listeners
         selectButton.addEventListener('click', toggleSelectionMode);
         downloadSelected.addEventListener('click', downloadSelectedPhotos);
-        deleteSelected.addEventListener('click', deleteSelectedPhotos);
+        // deleteSelected.addEventListener('click', deleteSelectedPhotos);
         
         // Keyboard shortcuts for escape key
         document.addEventListener('keydown', (e) => {

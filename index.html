@@ -25,7 +25,7 @@
         }
 
         .camera-container {
-            height: 100vh;
+            height: 95vh;
             width: 100vw;
             display: flex;
             flex-direction: column;
@@ -499,36 +499,56 @@
 
         // Save photo to server
         async function savePhoto() {
-            try {
-                showStatus('Uploading...');
-                
-                const blob = await fetch(currentPhoto).then(r => r.blob());
-                const formData = new FormData();
-                formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+    try {
+        showStatus('Uploading...');
 
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+        // جلب الصورة من currentPhoto
+        const img = new Image();
+        img.crossOrigin = 'anonymous'; // لو الصورة من مصدر خارجي
+        img.src = currentPhoto;
 
-                const result = await response.json();
-                if (result.success) {
-                    // Update the gallery preview
-                    lastPhoto.src = currentPhoto;
-                    showStatus('Photo saved successfully!');
-                    
-                    // Hide preview after a short delay
-                    setTimeout(() => {
-                        previewContainer.classList.remove('active');
-                    }, 1500);
-                } else {
-                    showStatus('Upload failed: ' + result.error, true);
-                }
-            } catch (error) {
-                console.error('Upload error:', error);
-                showStatus('Upload error: ' + error.message, true);
-            }
+        await new Promise(resolve => {
+            img.onload = resolve;
+        });
+
+        // إنشاء Canvas وضبط الحجم
+        const canvas = document.createElement('canvas');
+        const maxWidth = 1024;  // أقصى عرض للصورة المضغوطة
+        const scaleSize = maxWidth / img.width;
+        canvas.width = maxWidth;
+        canvas.height = img.height * scaleSize;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // تحويل Canvas إلى Blob مع ضغط الجودة (0.7 = جودة 70%)
+        const blob = await new Promise(resolve => 
+            canvas.toBlob(resolve, 'image/jpeg', 0.7)
+        );
+
+        const formData = new FormData();
+        formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            lastPhoto.src = currentPhoto;
+            showStatus('Photo saved successfully!');
+            setTimeout(() => {
+                previewContainer.classList.remove('active');
+            }, 1500);
+        } else {
+            showStatus('Upload failed: ' + result.error, true);
         }
+    } catch (error) {
+        console.error('Upload error:', error);
+        showStatus('Upload error: ' + error.message, true);
+    }
+}
 
         // Switch between front and back camera
         async function switchCamera() {
