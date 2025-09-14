@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📸 Disposable Camera</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="camera-container">
+        <div class="camera-body">
+            <div class="camera-lens">
+                <div class="lens-glass"></div>
+                <div class="lens-ring"></div>
+            </div>
+            
+            <div class="camera-viewfinder">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display: none;"></canvas>
+            </div>
+
+            <div class="camera-controls">
+                <button id="captureBtn" class="shutter-button">
+                    <div class="shutter-circle"></div>
+                </button>
+                
+                <button id="galleryBtn" class="gallery-button">
+                    🖼️
+                </button>
+            </div>
+
+            <div class="camera-status">
+                <div id="flash" class="flash"></div>
+                <div id="status" class="status">Ready to capture</div>
+            </div>
+        </div>
+
+        <div class="preview-container" id="previewContainer" style="display: none;">
+            <img id="previewImage" src="" alt="Preview">
+            <div class="preview-controls">
+                <button id="retakeBtn">↺ Retake</button>
+                <button id="saveBtn">💾 Save Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureBtn = document.getElementById('captureBtn');
+        const galleryBtn = document.getElementById('galleryBtn');
+        const flash = document.getElementById('flash');
+        const status = document.getElementById('status');
+        const previewContainer = document.getElementById('previewContainer');
+        const previewImage = document.getElementById('previewImage');
+        const retakeBtn = document.getElementById('retakeBtn');
+        const saveBtn = document.getElementById('saveBtn');
+
+        let stream = null;
+        let currentPhoto = null;
+
+        // Initialize camera
+        async function initCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }, 
+                    audio: false 
+                });
+                video.srcObject = stream;
+                status.textContent = 'Camera ready';
+            } catch (error) {
+                status.textContent = 'Camera error: ' + error.message;
+                console.error('Camera error:', error);
+            }
+        }
+
+        // Capture photo
+        function capturePhoto() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Show flash effect
+            flash.style.display = 'block';
+            setTimeout(() => flash.style.display = 'none', 200);
+
+            // Show preview
+            currentPhoto = canvas.toDataURL('image/jpeg');
+            previewImage.src = currentPhoto;
+            previewContainer.style.display = 'block';
+            status.textContent = 'Preview';
+        }
+
+        // Save photo to server
+        async function savePhoto() {
+            try {
+                const blob = await fetch(currentPhoto).then(r => r.blob());
+                const formData = new FormData();
+                formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    status.textContent = 'Photo saved!';
+                    setTimeout(() => {
+                        previewContainer.style.display = 'none';
+                        status.textContent = 'Ready to capture';
+                    }, 2000);
+                }
+            } catch (error) {
+                status.textContent = 'Save error: ' + error.message;
+            }
+        }
+
+        // Event listeners
+        captureBtn.addEventListener('click', capturePhoto);
+        galleryBtn.addEventListener('click', () => {
+            window.location.href = '/gallery';
+        });
+        retakeBtn.addEventListener('click', () => {
+            previewContainer.style.display = 'none';
+            status.textContent = 'Ready to capture';
+        });
+        saveBtn.addEventListener('click', savePhoto);
+
+        // Listen for new photos from other users
+        socket.on('newPhoto', (data) => {
+            console.log('New photo taken:', data.filename);
+        });
+
+        // Initialize camera on load
+        window.addEventListener('load', initCamera);
+    </script>
+</body>
+</html>

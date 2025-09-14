@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+        }
+        
+        .gallery-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .gallery-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .gallery-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .back-btn {
+            background: #666;
+            color: white;
+        }
+        
+        .download-btn {
+            background: #007AFF;
+            color: white;
+        }
+        
+        .delete-btn {
+            background: #FF3B30;
+            color: white;
+        }
+        
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .photo-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        
+        .photo-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .photo-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .photo-info {
+            padding: 15px;
+        }
+        
+        .photo-name {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .photo-date {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .photo-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .action-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .download-single-btn {
+            background: #007AFF;
+            color: white;
+        }
+        
+        .no-photos {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .no-photos p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .camera-link {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007AFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="gallery-container">
+        <div class="gallery-header">
+            <h1 class="gallery-title">Photo Gallery</h1>
+            <div class="gallery-controls">
+                <button class="control-btn back-btn" onclick="window.location.href='/'">
+                    ← Back to Camera
+                </button>
+                <button class="control-btn download-btn" onclick="downloadAll()">
+                    ⬇ Download All
+                </button>
+                <button class="control-btn delete-btn" onclick="clearAll()">
+                    🗑 Delete All
+                </button>
+            </div>
+        </div>
+        
+        <div id="photosGrid" class="photos-grid">
+            <div class="loading">Loading photos...</div>
+        </div>
+        
+        <div id="noPhotos" class="no-photos" style="display: none;">
+            <p>No photos yet! 📸</p>
+            <a href="/" class="camera-link">Take some photos</a>
+        </div>
+    </div>
+
+    <script>
+        const photosGrid = document.getElementById('photosGrid');
+        const noPhotos = document.getElementById('noPhotos');
+        
+        // Load photos from server
+        async function loadPhotos() {
+            try {
+                const response = await fetch('/photos');
+                const photos = await response.json();
+                
+                if (photos.length === 0) {
+                    photosGrid.style.display = 'none';
+                    noPhotos.style.display = 'block';
+                    return;
+                }
+                
+                photosGrid.innerHTML = '';
+                
+                photos.forEach(photo => {
+                    const photoCard = document.createElement('div');
+                    photoCard.className = 'photo-card';
+                    
+                    photoCard.innerHTML = `
+                        <img src="${photo.url}" alt="${photo.filename}" class="photo-image">
+                        <div class="photo-info">
+                            <div class="photo-name">${photo.filename}</div>
+                            <div class="photo-date">${new Date(photo.timestamp).toLocaleString()}</div>
+                            <div class="photo-actions">
+                                <button class="action-btn download-single-btn" onclick="downloadPhoto('${photo.filename}')">
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    photosGrid.appendChild(photoCard);
+                });
+            } catch (error) {
+                photosGrid.innerHTML = '<div class="loading">Error loading photos. Please try again.</div>';
+                console.error('Error loading photos:', error);
+            }
+        }
+        
+        // Download a single photo
+        function downloadPhoto(filename) {
+            window.open(`/download/${filename}`, '_blank');
+        }
+        
+        // Download all photos as a ZIP file
+        function downloadAll() {
+            window.open('/download-all', '_blank');
+        }
+        
+        // Delete all photos
+        async function clearAll() {
+            if (!confirm('Are you sure you want to delete all photos? This cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/photos', {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('All photos have been deleted.');
+                    loadPhotos();
+                } else {
+                    alert('Error deleting photos: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error deleting photos. Please try again.');
+                console.error('Error deleting photos:', error);
+            }
+        }
+        
+        // Load photos when page loads
+        window.addEventListener('load', loadPhotos);
+    </script>
+</body>
+</html>
