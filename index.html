@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>iPhone Camera</title>
+    <title>Graduation Camera</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -22,6 +22,83 @@
             height: 100vh;
             width: 100vw;
             position: fixed;
+        }
+
+        /* Graduation Message Card */
+        .graduation-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 500px;
+            background: linear-gradient(135deg, #8a2387, #e94057, #f27121);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.8s ease-out;
+        }
+
+        .graduation-card.visible {
+            opacity: 1;
+        }
+
+        .graduation-card h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .graduation-card h1 {
+            font-size: 50px;
+            margin-bottom: 25px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .graduation-card p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .graduation-card .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .graduation-card .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .graduation-cap {
+            font-size: 40px;
+            margin-bottom: 15px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f0f;
+            opacity: 0.7;
+            z-index: 1999;
         }
 
         .camera-container {
@@ -90,6 +167,11 @@
             object-fit: cover;
         }
 
+        /* Front camera view (no mirroring) */
+        .front-camera #video {
+            transform: scaleX(1); /* Remove mirror effect */
+        }
+
         /* Camera controls */
         .camera-controls {
             position: absolute;
@@ -137,6 +219,11 @@
             background: #f0f0f0;
         }
 
+        .shutter-button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
         .camera-switch {
             width: 60px;
             height: 60px;
@@ -148,6 +235,11 @@
             justify-content: center;
             border: none;
             color: white;
+        }
+
+        .camera-switch:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Capture modes */
@@ -247,6 +339,11 @@
             color: black;
         }
 
+        .preview-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         /* Camera indicators */
         .camera-indicators {
             position: absolute;
@@ -338,27 +435,73 @@
             backdrop-filter: blur(10px);
             display: none;
         }
+
+        /* Loading spinner */
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            z-index: 3000;
+            display: none;
+        }
+
+        .loading-spinner::after {
+            content: "";
+            display: block;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: spinner 1.2s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Overlay to prevent interactions during upload */
+        .upload-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2500;
+            display: none;
+        }
     </style>
 </head>
 
 <body>
-    <div class="camera-container">
-        <!-- Top controls -->
+    <!-- Graduation Message Card -->
+    <div class="graduation-card" id="graduationCard">
+        <div class="graduation-cap">🎓</div>
+        <h2>حفل تخرج </h2>
+        <h1>نايا زيدان زيدان</h1>
+        <p>
+           لتقط أجمل لحظاتنا الجميلة اليوم واحتفظ بذكريات لا تُنسى تدوم مدى الحياة، ولنتشارك هذه اللحظات معاً لنزيد من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!!</p>
+        <button class="close-btn" id="closeGraduationCard">Continue to Camera</button>
+    </div>
 
+    <!-- Loading spinner and overlay -->
+    <div class="upload-overlay" id="uploadOverlay"></div>
+    <div class="loading-spinner" id="loadingSpinner"></div>
 
+    <div class="camera-container" id="cameraContainer">
         <!-- Camera viewfinder -->
-        <div class="camera-viewfinder">
+        <div class="camera-viewfinder" id="cameraViewfinder">
             <video id="video" autoplay playsinline></video>
             <canvas id="canvas" style="display: none;"></canvas>
-
-           
 
             <!-- Focus circle -->
             <div class="focus-circle"></div>
         </div>
-
-
-        <!-- Capture modes -->
 
         <!-- Camera controls -->
         <div class="camera-controls">
@@ -404,6 +547,12 @@
         const focusCircle = document.querySelector('.focus-circle');
         const galleryPreview = document.getElementById('galleryPreview');
         const statusMessage = document.getElementById('statusMessage');
+        const graduationCard = document.getElementById('graduationCard');
+        const closeGraduationCard = document.getElementById('closeGraduationCard');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const uploadOverlay = document.getElementById('uploadOverlay');
+        const cameraContainer = document.getElementById('cameraContainer');
+        const cameraViewfinder = document.getElementById('cameraViewfinder');
         const flash = document.createElement('div');
         flash.className = 'flash';
         document.body.appendChild(flash);
@@ -412,6 +561,61 @@
         let stream = null;
         let currentPhoto = null;
         let facingMode = 'environment'; // 'environment' for back camera, 'user' for front
+        let isUploading = false;
+
+        // Show graduation card only once per client (using localStorage)
+        function showGraduationCard() {
+            // Check if the user has already seen the message
+            if (!localStorage.getItem('graduationMessageSeen')) {
+                graduationCard.classList.add('visible');
+                createConfetti();
+                
+                // Auto-hide after 8 seconds
+                setTimeout(() => {
+                    hideGraduationCard();
+                }, 8000);
+                
+                // Mark as seen
+                localStorage.setItem('graduationMessageSeen', 'true');
+            }
+        }
+        
+        // Hide graduation card
+        function hideGraduationCard() {
+            graduationCard.classList.remove('visible');
+        }
+        
+        // Create confetti effect
+        function createConfetti() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+            const container = document.body;
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = -20 + 'px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (5 + Math.random() * 10) + 'px';
+                confetti.style.height = (5 + Math.random() * 10) + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                container.appendChild(confetti);
+                
+                // Animate confetti
+                const animation = confetti.animate([
+                    { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                    { transform: `translateY(100vh) rotate(${360 * 3}deg)`, opacity: 0 }
+                ], {
+                    duration: 3000 + Math.random() * 3000,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.1, 1)',
+                });
+                
+                // Remove confetti after animation completes
+                animation.onfinish = () => {
+                    confetti.remove();
+                };
+            }
+        }
 
         // Initialize camera
         async function initCamera() {
@@ -432,6 +636,13 @@
                 });
 
                 video.srcObject = stream;
+                
+                // Apply front camera class if needed (remove mirroring)
+                if (facingMode === 'user') {
+                    cameraViewfinder.classList.add('front-camera');
+                } else {
+                    cameraViewfinder.classList.remove('front-camera');
+                }
 
                 // Set up focus effect on video tap
                 video.addEventListener('click', handleFocus);
@@ -472,8 +683,36 @@
             }, 1000);
         }
 
+        // Show loading state
+        function showLoading() {
+            isUploading = true;
+            loadingSpinner.style.display = 'block';
+            uploadOverlay.style.display = 'block';
+            
+            // Disable all interactive elements
+            captureBtn.disabled = true;
+            cameraSwitch.disabled = true;
+            retakeBtn.disabled = true;
+            saveBtn.disabled = true;
+        }
+
+        // Hide loading state
+        function hideLoading() {
+            isUploading = false;
+            loadingSpinner.style.display = 'none';
+            uploadOverlay.style.display = 'none';
+            
+            // Re-enable interactive elements
+            captureBtn.disabled = false;
+            cameraSwitch.disabled = false;
+            retakeBtn.disabled = false;
+            saveBtn.disabled = false;
+        }
+
         // Capture photo
         function capturePhoto() {
+            if (isUploading) return;
+            
             const context = canvas.getContext('2d');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -499,79 +738,74 @@
 
         // Save photo to server
         async function savePhoto() {
-    try {
-        showStatus('Uploading...');
+            if (isUploading) return;
+            
+            try {
+                showLoading();
+                showStatus('Uploading...');
+                 const blob = await fetch(currentPhoto).then(r => r.blob());
+                const formData = new FormData();
+                formData.append('photo', blob, `photo_${Date.now()}.jpg`);
 
-        // جلب الصورة من currentPhoto
-        const img = new Image();
-        img.crossOrigin = 'anonymous'; // لو الصورة من مصدر خارجي
-        img.src = currentPhoto;
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-        await new Promise(resolve => {
-            img.onload = resolve;
-        });
-
-        // إنشاء Canvas وضبط الحجم
-        const canvas = document.createElement('canvas');
-        const maxWidth = 1024;  // أقصى عرض للصورة المضغوطة
-        const scaleSize = maxWidth / img.width;
-        canvas.width = maxWidth;
-        canvas.height = img.height * scaleSize;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // تحويل Canvas إلى Blob مع ضغط الجودة (0.7 = جودة 70%)
-        const blob = await new Promise(resolve => 
-            canvas.toBlob(resolve, 'image/jpeg', 0.7)
-        );
-
-        const formData = new FormData();
-        formData.append('photo', blob, `photo_${Date.now()}.jpg`);
-
-        const response = await fetch('/upload', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-        if (result.success) {
-            lastPhoto.src = currentPhoto;
-            showStatus('Photo saved successfully!');
-            setTimeout(() => {
-                previewContainer.classList.remove('active');
-            }, 1500);
-        } else {
-            showStatus('Upload failed: ' + result.error, true);
+                const result = await response.json();
+                if (result.success) {
+                    // Update the gallery preview
+                    lastPhoto.src = currentPhoto;
+                    showStatus('Photo saved successfully!');
+                    
+                    // Hide preview after a short delay
+                    setTimeout(() => {
+                        previewContainer.classList.remove('active');
+                        hideLoading()
+                    }, 1500);
+                } else {
+                    showStatus('Upload failed: ' + result.error, true);
+                    hideLoading()
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showStatus('Upload error: ' + error.message, true);
+                hideLoading()
+            }
         }
-    } catch (error) {
-        console.error('Upload error:', error);
-        showStatus('Upload error: ' + error.message, true);
-    }
-}
 
         // Switch between front and back camera
         async function switchCamera() {
+            if (isUploading) return;
+            
             facingMode = facingMode === 'environment' ? 'user' : 'environment';
             await initCamera();
         }
 
         // Navigate to gallery
         function goToGallery() {
-            window.location.href = '/gallery';
+            if (isUploading) return;
+            window.location.href = '/gallery'; // Uncomment when you have a gallery page
+            // showStatus('Gallery feature coming soon!');
         }
 
         // Event listeners
         captureBtn.addEventListener('click', capturePhoto);
         cameraSwitch.addEventListener('click', switchCamera);
         retakeBtn.addEventListener('click', () => {
+            if (isUploading) return;
             previewContainer.classList.remove('active');
         });
         saveBtn.addEventListener('click', savePhoto);
         galleryPreview.addEventListener('click', goToGallery);
+        closeGraduationCard.addEventListener('click', hideGraduationCard);
 
         // Initialize camera on load
-        window.addEventListener('load', initCamera);
+        window.addEventListener('load', () => {
+            initCamera();
+            // Show graduation message after a short delay (only once per client)
+            setTimeout(showGraduationCard, 500);
+        });
 
         // Handle orientation changes
         window.addEventListener('orientationchange', initCamera);

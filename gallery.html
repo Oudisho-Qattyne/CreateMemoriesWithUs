@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +13,7 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: #fff;
@@ -20,7 +21,7 @@
             overflow: hidden;
             height: 100vh;
         }
-        
+
         /* iOS Status Bar */
         .status-bar {
             height: 44px;
@@ -31,12 +32,12 @@
             position: relative;
             border-bottom: 1px solid #e6e6e6;
         }
-        
+
         .status-bar-time {
             font-weight: 600;
             font-size: 15px;
         }
-        
+
         /* Navigation Header */
         .gallery-header {
             height: 60px;
@@ -46,13 +47,16 @@
             padding: 0 16px;
             background: #f8f8f8;
             border-bottom: 1px solid #e6e6e6;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        
+
         .header-title {
             font-size: 22px;
             font-weight: 700;
         }
-        
+
         .header-button {
             background: none;
             border: none;
@@ -61,42 +65,52 @@
             color: #007AFF;
             padding: 8px 12px;
         }
-        
+
         .header-button.danger {
             color: #FF3B30;
         }
-        
-        /* Photos Grid */
+
+        /* Main container for proper scrolling */
+        .gallery-main {
+            height: calc(100vh - 104px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Photos Grid - Fixed sizing */
         .photos-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 2px;
-            padding: 2px;
-            height: calc(100vh - 104px);
-            overflow-y: auto;
         }
-        
+
         .photo-item {
-            aspect-ratio: 1/1;
-            overflow: hidden;
             position: relative;
+            overflow: hidden;
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%;
+            /* This creates a square aspect ratio */
         }
-        
+
         .photo-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: transform 0.2s;
         }
-        
+
         .photo-item.selected img {
             opacity: 0.7;
         }
-        
+
         .photo-item:active img {
             transform: scale(0.95);
         }
-        
+
         .selection-badge {
             position: absolute;
             top: 5px;
@@ -113,12 +127,13 @@
             font-weight: 500;
             border: 2px solid white;
             display: none;
+            z-index: 2;
         }
-        
+
         .photo-item.selected .selection-badge {
             display: flex;
         }
-        
+
         /* Empty State */
         .no-photos {
             height: calc(100vh - 104px);
@@ -130,19 +145,19 @@
             text-align: center;
             color: #8E8E93;
         }
-        
+
         .no-photos i {
             font-size: 60px;
             margin-bottom: 16px;
             color: #C5C5C7;
         }
-        
+
         .no-photos p {
             font-size: 18px;
             margin-bottom: 20px;
             font-weight: 500;
         }
-        
+
         .no-photos button {
             background: #007AFF;
             color: white;
@@ -152,7 +167,7 @@
             font-size: 16px;
             font-weight: 600;
         }
-        
+
         /* Selection Mode */
         .selection-mode {
             position: fixed;
@@ -168,22 +183,23 @@
             padding: 0 20px;
             transform: translateY(100%);
             transition: transform 0.3s ease;
+            z-index: 20;
         }
-        
+
         .selection-mode.active {
             transform: translateY(0);
         }
-        
+
         .selection-count {
             font-size: 16px;
             font-weight: 500;
         }
-        
+
         .selection-actions {
             display: flex;
             gap: 20px;
         }
-        
+
         .selection-action {
             background: none;
             border: none;
@@ -191,12 +207,12 @@
             font-weight: 500;
             color: #007AFF;
         }
-        
+
         .selection-action:disabled {
             color: #8E8E93;
             opacity: 0.5;
         }
-        
+
         /* Loading State */
         .loading {
             position: absolute;
@@ -206,7 +222,7 @@
             color: #8E8E93;
             font-size: 16px;
         }
-        
+
         /* Photo Detail Modal */
         .photo-detail {
             position: fixed;
@@ -222,26 +238,26 @@
             pointer-events: none;
             transition: opacity 0.3s;
         }
-        
+
         .photo-detail.active {
             opacity: 1;
             pointer-events: all;
         }
-        
+
         .detail-header {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             height: 80px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 20px;
             z-index: 10;
         }
-        
+
         .detail-back {
             width: 40px;
             height: 40px;
@@ -254,26 +270,26 @@
             border: none;
             color: white;
         }
-        
+
         .detail-image {
             width: 100%;
             height: 100%;
             object-fit: contain;
         }
-        
+
         .detail-footer {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
             height: 80px;
-            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 10;
         }
-        
+
         .detail-action {
             width: 50px;
             height: 50px;
@@ -287,14 +303,156 @@
             color: white;
             margin: 0 10px;
         }
+
+        .detail-action2 {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.304);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            color: white;
+            margin: 0 10px;
+        }
+        .status-message {
+            position: absolute;
+            bottom: 120px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 20px;
+            margin: 0 auto;
+            width: fit-content;
+            backdrop-filter: blur(10px);
+            display: none;
+        }
+         /* Loading spinner */
+         .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            z-index: 3000;
+            display: none;
+        }
+
+        .loading-spinner::after {
+            content: "";
+            display: block;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            border-color: #fff transparent #fff transparent;
+            animation: spinner 1.2s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Overlay to prevent interactions during upload */
+        .upload-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2500;
+            display: none;
+        }
+
+        /* Delete Confirmation Card */
+        .delete-confirmation {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 300px;
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .delete-confirmation.active {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .confirmation-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .confirmation-message {
+            font-size: 14px;
+            color: #8E8E93;
+            text-align: center;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .confirmation-icon {
+            text-align: center;
+            font-size: 48px;
+            color: #FF3B30;
+            margin-bottom: 15px;
+        }
+
+        .confirmation-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .confirmation-button {
+            flex: 1;
+            padding: 12px 0;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .confirmation-cancel {
+            background: #f0f0f0;
+            color: #007AFF;
+        }
+
+        .confirmation-delete {
+            background: #FF3B30;
+            color: white;
+        }
     </style>
 </head>
+
 <body>
     <!-- iOS Status Bar -->
     <div class="status-bar">
         <div class="status-bar-time" id="currentTime">12:00</div>
     </div>
-    
+
     <!-- Gallery Header -->
     <div class="gallery-header">
         <button class="header-button" onclick="window.location.href='/'">
@@ -303,28 +461,30 @@
         <div class="header-title">Photos</div>
         <button class="header-button" id="selectButton">Select</button>
     </div>
-    
-    <!-- Photos Grid -->
-    <div class="photos-grid" id="photosGrid">
-        <div class="loading">Loading photos...</div>
+
+    <!-- Main content area with proper scrolling -->
+    <div class="gallery-main">
+        <!-- Photos Grid -->
+        <div class="photos-grid" id="photosGrid">
+            <div class="loading">Loading photos...</div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="no-photos" id="noPhotos" style="display: none;">
+            <i class="fas fa-camera"></i>
+            <p>No Photos Yet</p>
+            <button onclick="window.location.href='/'">Take Some Photos</button>
+        </div>
     </div>
-    
-    <!-- Empty State -->
-    <div class="no-photos" id="noPhotos" style="display: none;">
-        <i class="fas fa-camera"></i>
-        <p>No Photos Yet</p>
-        <button onclick="window.location.href='/'">Take Some Photos</button>
-    </div>
-    
+
     <!-- Selection Mode Footer -->
     <div class="selection-mode" id="selectionMode">
         <div class="selection-count" id="selectionCount">0 Selected</div>
         <div class="selection-actions">
             <button class="selection-action" id="downloadSelected" disabled>Download</button>
-            <!-- <button class="selection-action danger" id="deleteSelected" disabled>Delete</button> -->
         </div>
     </div>
-    
+
     <!-- Photo Detail View -->
     <div class="photo-detail" id="photoDetail">
         <div class="detail-header">
@@ -337,6 +497,25 @@
             <button class="detail-action" onclick="downloadCurrentPhoto()">
                 <i class="fas fa-arrow-down"></i>
             </button>
+            <button class="detail-action2" id="deleteButton">
+                <i class="fa-solid fa-trash"></i>
+            </button>
+        </div>
+        <div class="upload-overlay" id="uploadOverlay"></div>
+        <div class="loading-spinner" id="loadingSpinner"></div>
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <!-- Delete Confirmation Card -->
+    <div class="delete-confirmation" id="deleteConfirmation">
+        <div class="confirmation-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="confirmation-title">Delete Photo</div>
+        <div class="confirmation-message">Are you sure you want to delete this photo? This action cannot be undone.</div>
+        <div class="confirmation-actions">
+            <button class="confirmation-button confirmation-cancel" id="cancelDelete">Cancel</button>
+            <button class="confirmation-button confirmation-delete" id="confirmDelete">Delete</button>
         </div>
     </div>
 
@@ -348,17 +527,25 @@
         const selectionMode = document.getElementById('selectionMode');
         const selectionCount = document.getElementById('selectionCount');
         const downloadSelected = document.getElementById('downloadSelected');
-        // const deleteSelected = document.getElementById('deleteSelected');
         const photoDetail = document.getElementById('photoDetail');
         const detailImage = document.getElementById('detailImage');
+        const statusMessage = document.getElementById('statusMessage');
         const currentTime = document.getElementById('currentTime');
-        
+        const deleteButton = document.getElementById('deleteButton');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const uploadOverlay = document.getElementById('uploadOverlay');
+        const galleryMain = document.querySelector('.gallery-main');
+        const deleteConfirmation = document.getElementById('deleteConfirmation');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const confirmDelete = document.getElementById('confirmDelete');
+
         // State variables
         let photos = [];
         let selectedPhotos = new Set();
         let isSelectMode = false;
         let currentDetailPhoto = null;
-        
+        let isUploading = false;
+
         // Update time
         function updateTime() {
             const now = new Date();
@@ -367,48 +554,77 @@
             currentTime.textContent = `${hours}:${minutes}`;
         }
         
+        function hideLoading() {
+            isUploading = false;
+            loadingSpinner.style.display = 'none';
+            uploadOverlay.style.display = 'none';
+        }
+        
+        function showLoading() {
+            isUploading = true;
+            loadingSpinner.style.display = 'block';
+            uploadOverlay.style.display = 'block';
+        }
+
+        function showStatus(message, isError = false) {
+            statusMessage.textContent = message;
+            statusMessage.style.display = 'block';
+            if (isError) {
+                statusMessage.style.background = 'rgba(255, 59, 48, 0.7)';
+            } else {
+                statusMessage.style.background = 'rgba(0, 0, 0, 0.5)';
+            }
+            
+            setTimeout(() => {
+                statusMessage.style.display = 'none';
+            }, 3000);
+        }
+
         setInterval(updateTime, 60000);
         updateTime();
-        
+
         // Load photos
         async function loadPhotos() {
             try {
                 photosGrid.innerHTML = '<div class="loading">Loading photos...</div>';
+                showLoading()
                 const response = await fetch('/photos');
                 photos = await response.json();
-                
+
                 if (photos.length === 0) {
                     photosGrid.style.display = 'none';
                     noPhotos.style.display = 'flex';
                     return;
                 }
-                
+
                 photosGrid.style.display = 'grid';
                 noPhotos.style.display = 'none';
-                
+
                 renderPhotos();
+                hideLoading()
             } catch (error) {
                 photosGrid.innerHTML = '<div class="error">Error loading photos</div>';
                 console.error('Error loading photos:', error);
+                hideLoading()
             }
         }
-        
+
         // Render photos in grid
         function renderPhotos() {
             photosGrid.innerHTML = '';
-            
+
             photos.forEach((photo, index) => {
                 const photoItem = document.createElement('div');
                 photoItem.className = 'photo-item';
                 if (selectedPhotos.has(index)) {
                     photoItem.classList.add('selected');
                 }
-                
+
                 photoItem.innerHTML = `
                     <img src="${photo.url}" alt="Photo" loading="lazy">
                     <div class="selection-badge">${Array.from(selectedPhotos).indexOf(index) + 1}</div>
                 `;
-                
+
                 // Click handler for selection mode
                 photoItem.addEventListener('click', () => {
                     if (isSelectMode) {
@@ -417,11 +633,11 @@
                         viewPhoto(photo);
                     }
                 });
-                
+
                 photosGrid.appendChild(photoItem);
             });
         }
-        
+
         // Toggle selection of a photo
         function toggleSelection(index) {
             if (selectedPhotos.has(index)) {
@@ -429,19 +645,18 @@
             } else {
                 selectedPhotos.add(index);
             }
-            
+
             updateSelectionUI();
         }
-        
+
         // Update selection UI
         function updateSelectionUI() {
             // Update selection count
             selectionCount.textContent = `${selectedPhotos.size} Selected`;
-            
+
             // Enable/disable buttons based on selection
             downloadSelected.disabled = selectedPhotos.size === 0;
-            deleteSelected.disabled = selectedPhotos.size === 0;
-            
+
             // Update badge numbers and selection state
             const photoItems = document.querySelectorAll('.photo-item');
             photoItems.forEach((item, index) => {
@@ -454,11 +669,11 @@
                 }
             });
         }
-        
+
         // Toggle selection mode
         function toggleSelectionMode() {
             isSelectMode = !isSelectMode;
-            
+
             if (isSelectMode) {
                 selectButton.textContent = 'Cancel';
                 selectionMode.classList.add('active');
@@ -471,82 +686,105 @@
                 renderPhotos();
             }
         }
-        
+
         // View photo in detail
         function viewPhoto(photo) {
             currentDetailPhoto = photo;
             detailImage.src = photo.url;
             photoDetail.classList.add('active');
         }
-        
+
         // Close detail view
         function closeDetail() {
             photoDetail.classList.remove('active');
         }
-        
+
         // Download current photo in detail view
         function downloadCurrentPhoto() {
             if (currentDetailPhoto) {
                 window.open(`/download/${currentDetailPhoto.filename}`, '_blank');
             }
         }
-        
+
         // Download selected photos
         async function downloadSelectedPhotos() {
             if (selectedPhotos.size === 0) return;
-            
+
             // For multiple selection, download as zip
             if (selectedPhotos.size > 1) {
                 window.open('/download-all', '_blank');
                 return;
             }
-            
+
             // For single selection, download directly
             const index = Array.from(selectedPhotos)[0];
             window.open(`/download/${photos[index].filename}`, '_blank');
         }
-        
-        // Delete selected photos
-        async function deleteSelectedPhotos() {
-            if (selectedPhotos.size === 0) return;
-            
-            if (!confirm(`Are you sure you want to delete ${selectedPhotos.size} photo(s)?`)) {
-                return;
-            }
-            
+
+        // Show delete confirmation
+        function showDeleteConfirmation() {
+            deleteConfirmation.classList.add('active');
+        }
+
+        // Hide delete confirmation
+        function hideDeleteConfirmation() {
+            deleteConfirmation.classList.remove('active');
+        }
+
+        // Delete photo after confirmation
+        async function deletePhoto(filename) {
             try {
-                const response = await fetch('/photos', { method: 'DELETE' });
+                hideDeleteConfirmation();
+                showLoading();
+                
+                const response = await fetch(`/photos/${filename}`, {
+                    method: 'DELETE'
+                });
                 const result = await response.json();
                 
                 if (result.success) {
-                    // Exit selection mode and reload photos
-                    toggleSelectionMode();
-                    loadPhotos();
+                    showStatus('Photo deleted successfully!');
+                    // Reload photos to update the view
+                    await loadPhotos();
+                    closeDetail();
                 } else {
-                    alert('Error deleting photos: ' + result.error);
+                    showStatus('Failed to delete photo: ' + result.error, true);
                 }
             } catch (error) {
-                console.error('Error deleting photos:', error);
-                alert('Error deleting photos. Please try again.');
+                showStatus('Error deleting photo: ' + error.message, true);
+            } finally {
+                hideLoading();
             }
         }
-        
+
         // Event listeners
         selectButton.addEventListener('click', toggleSelectionMode);
         downloadSelected.addEventListener('click', downloadSelectedPhotos);
-        // deleteSelected.addEventListener('click', deleteSelectedPhotos);
-        
+
+        // Delete button event listener - shows confirmation
+        deleteButton.addEventListener('click', showDeleteConfirmation);
+
+        // Confirmation buttons
+        cancelDelete.addEventListener('click', hideDeleteConfirmation);
+        confirmDelete.addEventListener('click', () => {
+            if (currentDetailPhoto) {
+                deletePhoto(currentDetailPhoto.filename);
+            }
+        });
+
         // Keyboard shortcuts for escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
-                if (photoDetail.classList.contains('active')) {
+                if (deleteConfirmation.classList.contains('active')) {
+                    hideDeleteConfirmation();
+                } else if (photoDetail.classList.contains('active')) {
                     closeDetail();
                 } else if (isSelectMode) {
                     toggleSelectionMode();
                 }
             }
         });
-        
+
         // Swipe to close detail view
         let touchStartY = 0;
         const detailImageEl = document.getElementById('detailImage');
@@ -554,7 +792,7 @@
             detailImageEl.addEventListener('touchstart', (e) => {
                 touchStartY = e.changedTouches[0].screenY;
             });
-            
+
             detailImageEl.addEventListener('touchend', (e) => {
                 const touchEndY = e.changedTouches[0].screenY;
                 if (touchEndY - touchStartY > 100) {
@@ -562,9 +800,10 @@
                 }
             });
         }
-        
+
         // Load photos on page load
         window.addEventListener('load', loadPhotos);
     </script>
 </body>
+
 </html>
