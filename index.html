@@ -317,7 +317,6 @@
             display: flex;
             justify-content: center;
             gap: 40px;
-            padding: 20px;
         }
 
         .preview-btn {
@@ -331,8 +330,8 @@
             justify-content: center;
             border: none;
             color: white;
-            font-size: 24px;
-            padding: 10px;
+            font-size: 50px;
+            /* padding: 10px; */
         }
 
         .preview-btn.confirm {
@@ -483,10 +482,11 @@
     <!-- Graduation Message Card -->
     <div class="graduation-card" id="graduationCard">
         <div class="graduation-cap">🎓</div>
+        <h2>اهلاً و سهلاً في</h2>
         <h2>حفل تخرج </h2>
         <h1>نايا زيدان زيدان</h1>
         <p>
-           لتقط أجمل لحظاتنا الجميلة اليوم واحتفظ بذكريات لا تُنسى تدوم مدى الحياة، ولنتشارك هذه اللحظات معاً لنزيد من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!!</p>
+           لنلتقط أجمل لحظاتنا الجميلة اليوم ولنحتفظ بذكريات لا تُنسى تدوم مدى الحياة، ولنتشارك هذه اللحظات معاً لنزيد من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!!</p>
         <button class="close-btn" id="closeGraduationCard">Continue to Camera</button>
     </div>
 
@@ -574,7 +574,7 @@
                 // Auto-hide after 8 seconds
                 setTimeout(() => {
                     hideGraduationCard();
-                }, 8000);
+                }, 30000);
                 
                 // Mark as seen
                 localStorage.setItem('graduationMessageSeen', 'true');
