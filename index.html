@@ -578,7 +578,8 @@
         <h1>نايا زيدان زيدان</h1>
         <p>
             لنلتقط أجمل لحظاتنا الجميلة اليوم ولنحتفظ بذكريات لا تُنسى تدوم مدى الحياة، ولنتشارك هذه اللحظات معاً لنزيد
-            من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!!</p>
+            من ألقها وروعتها. هذا هو يوم نايا المتألق بكل بريقه وتميزه..!! شاركونا قي تشكيل الالبوم...❤️    
+        </p>
         <button class="close-btn" id="closeGraduationCard">Continue to Camera</button>
     </div>
 
@@ -600,10 +601,7 @@
         </div>
 
         <!-- Zoom controls -->
-        <div class="zoom-controls">
-            <button class="zoom-btn" id="zoomIn">+</button>
-            <button class="zoom-btn" id="zoomOut">-</button>
-        </div>
+       
 
         <!-- Camera controls -->
         <div class="camera-controls">
@@ -668,8 +666,7 @@
         const cameraContainer = document.getElementById('cameraContainer');
         const cameraViewfinder = document.getElementById('cameraViewfinder');
         const recordingTimer = document.getElementById('recordingTimer');
-        const zoomInBtn = document.getElementById('zoomIn');
-        const zoomOutBtn = document.getElementById('zoomOut');
+       
         const captureModes = document.querySelectorAll('.capture-mode');
         const flash = document.createElement('div');
         flash.className = 'flash';
@@ -702,7 +699,7 @@
 
                 // Auto-hide after 8 seconds
                 setTimeout(() => {
-                    hideGraduationCard();
+                    removeGraduationCard();
                 }, 30000);
 
                 // Mark as seen
@@ -710,9 +707,11 @@
             }
         }
 
-        // Hide graduation card
-        function hideGraduationCard() {
-            graduationCard.classList.remove('visible');
+        // Remove graduation card from DOM completely
+        function removeGraduationCard() {
+            if (graduationCard && graduationCard.parentNode) {
+                graduationCard.parentNode.removeChild(graduationCard);
+            }
         }
 
         // Create confetti effect
@@ -1087,16 +1086,9 @@
         });
         saveBtn.addEventListener('click', savePhoto);
         galleryPreview.addEventListener('click', goToGallery);
-        closeGraduationCard.addEventListener('click', hideGraduationCard);
+        closeGraduationCard.addEventListener('click', removeGraduationCard);
         
-        // Zoom controls
-        zoomInBtn.addEventListener('click', () => {
-            setZoom(Math.min(maxZoom, zoomLevel + 0.25));
-        });
-        
-        zoomOutBtn.addEventListener('click', () => {
-            setZoom(Math.max(minZoom, zoomLevel - 0.25));
-        });
+      
         
         // Capture mode selection
         captureModes.forEach(mode => {

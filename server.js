@@ -206,6 +206,69 @@ app.get('/download-all', async (req, res) => {
         res.status(500).json({ error: 'Unable to download media' });
     }
 });
+
+// Download selected media files as zip
+app.get('/download-selected', async (req, res) => {
+    try {
+        // Get the list of filenames from query parameters
+        const { files } = req.query;
+        
+        if (!files) {
+            return res.status(400).json({ error: 'No files specified' });
+        }
+        
+        // Parse the files parameter (expected to be a comma-separated list)
+        const fileList = files.split(',');
+        
+        if (fileList.length === 0) {
+            return res.status(400).json({ error: 'No files specified' });
+        }
+
+        const archive = archiver('zip', {
+            zlib: { level: 9 }
+        });
+
+        // Set the filename for the download
+        res.attachment('selected-media.zip');
+        archive.pipe(res);
+
+        // Add each selected file to the archive
+        for (const filename of fileList) {
+            // Validate filename to prevent path traversal attacks
+            if (!filename.match(/^[a-zA-Z0-9_\-\.]+$/)) {
+                console.error('Invalid filename:', filename);
+                continue;
+            }
+            
+            // Check if file exists and download it
+            const { data: fileData, error: downloadError } = await supabase
+                .storage
+                .from(`nayagraduationparty`)
+                .download(filename);
+
+            if (!downloadError) {
+                archive.append(Buffer.from(await fileData.arrayBuffer()), { name: filename });
+            } else {
+                console.error('Error downloading file:', filename, downloadError);
+            }
+        }
+
+        archive.finalize();
+        
+        // Handle archive errors
+        archive.on('error', (err) => {
+            console.error('Archive error:', err);
+            if (!res.headersSent) {
+                res.status(500).json({ error: 'Failed to create zip file' });
+            }
+        });
+    } catch (error) {
+        console.error('Download selected error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Unable to download selected media' });
+        }
+    }
+});
 // Download single photo
 app.get('/download/:filename', async (req, res) => {
     try {

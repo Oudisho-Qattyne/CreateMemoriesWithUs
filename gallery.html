@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gallery</title>
+    <title>Gallery with Swipe Navigation</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -68,6 +68,19 @@
 
         .header-button.danger {
             color: #FF3B30;
+        }
+
+        /* New style for download all button */
+        .header-button.download-all {
+            background-color: #34C759;
+            color: white;
+            border-radius: 8px;
+            margin-right: 8px;
+        }
+
+        .header-buttons-container {
+            display: flex;
+            align-items: center;
         }
 
         /* Filter buttons */
@@ -315,6 +328,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+            overflow: hidden;
         }
 
         .detail-image {
@@ -528,6 +543,98 @@
             background: #FF3B30;
             color: white;
         }
+
+        /* Swipe navigation elements */
+        .swipe-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            transition: transform 0.3s ease;
+        }
+
+        .swipe-item {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .swipe-indicators {
+            position: absolute;
+            bottom: 90px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 15;
+        }
+
+        .swipe-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transition: background 0.3s;
+        }
+
+        .swipe-indicator.active {
+            background: rgba(255, 255, 255, 1);
+            transform: scale(1.2);
+        }
+
+        .swipe-nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            color: white;
+            font-size: 20px;
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .media-detail:hover .swipe-nav-button {
+            opacity: 1;
+        }
+
+        .swipe-nav-button.prev {
+            left: 15px;
+        }
+
+        .swipe-nav-button.next {
+            right: 15px;
+        }
+
+        .detail-counter {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            font-size: 16px;
+            z-index: 15;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 15px;
+            border-radius: 15px;
+            margin: 0 auto;
+            width: fit-content;
+            backdrop-filter: blur(10px);
+        }
     </style>
 </head>
 
@@ -537,13 +644,18 @@
         <div class="status-bar-time" id="currentTime">12:00</div>
     </div>
 
-    <!-- Gallery Header -->
+    <!-- Gallery Header - Modified to include Download All button -->
     <div class="gallery-header">
         <button class="header-button" onclick="window.location.href='/'">
             <i class="fas fa-chevron-left"></i> Back
         </button>
         <div class="header-title">Gallery</div>
-        <button class="header-button" id="selectButton">Select</button>
+        <div class="header-buttons-container">
+            <button class="header-button download-all" id="downloadAllButton">
+                <i class="fas fa-download"></i> Download All
+            </button>
+            <button class="header-button" id="selectButton">Select</button>
+        </div>
     </div>
 
     <!-- Filter buttons -->
@@ -583,7 +695,24 @@
                 <i class="fas fa-chevron-left"></i>
             </button>
         </div>
-        <div class="detail-content" id="detailContent"></div>
+        
+        <!-- Swipe container for navigation -->
+        <div class="swipe-container" id="swipeContainer"></div>
+        
+        <!-- Navigation buttons -->
+        <button class="swipe-nav-button prev" id="prevButton">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <button class="swipe-nav-button next" id="nextButton">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+        
+        <!-- Position indicator -->
+        <div class="detail-counter" id="detailCounter">1 of 10</div>
+        
+        <!-- Swipe indicators -->
+        <div class="swipe-indicators" id="swipeIndicators"></div>
+        
         <div class="video-controls" id="videoControls" style="display: none;">
             <button class="play-pause-btn" id="playPauseBtn">
                 <i class="fas fa-play"></i>
@@ -620,11 +749,11 @@
         const mediaGrid = document.getElementById('mediaGrid');
         const noMedia = document.getElementById('noMedia');
         const selectButton = document.getElementById('selectButton');
+        const downloadAllButton = document.getElementById('downloadAllButton');
         const selectionMode = document.getElementById('selectionMode');
         const selectionCount = document.getElementById('selectionCount');
         const downloadSelected = document.getElementById('downloadSelected');
         const mediaDetail = document.getElementById('mediaDetail');
-        const detailContent = document.getElementById('detailContent');
         const videoControls = document.getElementById('videoControls');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const statusMessage = document.getElementById('statusMessage');
@@ -636,6 +765,11 @@
         const cancelDelete = document.getElementById('cancelDelete');
         const confirmDelete = document.getElementById('confirmDelete');
         const filterButtons = document.querySelectorAll('.filter-button');
+        const swipeContainer = document.getElementById('swipeContainer');
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const swipeIndicators = document.getElementById('swipeIndicators');
+        const detailCounter = document.getElementById('detailCounter');
 
         // State variables
         let mediaItems = [];
@@ -646,6 +780,12 @@
         let isUploading = false;
         let currentVideo = null;
         let currentFilter = 'all';
+        
+        // Swipe navigation variables
+        let currentMediaIndex = 0;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isSwiping = false;
 
         // Update time
         function updateTime() {
@@ -681,6 +821,33 @@
             }, 3000);
         }
 
+        // Download all media function
+        function downloadAllMedia() {
+            if (mediaItems.length === 0) {
+                showStatus('No media available to download', true);
+                return;
+            }
+            
+            showStatus('Preparing download...');
+            showLoading();
+            
+            // Open the download endpoint in a new tab
+            const downloadWindow = window.open('/download-all', '_blank');
+            
+            // Check if the window opened successfully
+            if (!downloadWindow || downloadWindow.closed || typeof downloadWindow.closed == 'undefined') {
+                showStatus('Popup blocked. Please allow popups for this site.', true);
+                hideLoading();
+                return;
+            }
+            
+            // Hide loading after a reasonable time (we can't know exactly when the download starts)
+            setTimeout(() => {
+                hideLoading();
+                showStatus('Download started!');
+            }, 3000);
+        }
+
         setInterval(updateTime, 60000);
         updateTime();
 
@@ -706,11 +873,15 @@
                 if (mediaItems.length === 0) {
                     mediaGrid.style.display = 'none';
                     noMedia.style.display = 'flex';
+                    downloadAllButton.disabled = true;
+                    downloadAllButton.style.opacity = '0.5';
                     return;
                 }
 
                 mediaGrid.style.display = 'grid';
                 noMedia.style.display = 'none';
+                downloadAllButton.disabled = false;
+                downloadAllButton.style.opacity = '1';
 
                 filterMedia(currentFilter);
                 hideLoading();
@@ -752,7 +923,7 @@
                     if (isSelectMode) {
                         toggleSelection(index);
                     } else {
-                        viewMedia(media);
+                        viewMedia(index);
                     }
                 });
 
@@ -809,29 +980,128 @@
             }
         }
 
-        // View media in detail
-        function viewMedia(media) {
-            currentDetailMedia = media;
-            detailContent.innerHTML = '';
+        // View media in detail with swipe navigation
+        function viewMedia(index) {
+            currentMediaIndex = index;
+            currentDetailMedia = filteredMedia[index];
+            
+            // Clear previous content
+            swipeContainer.innerHTML = '';
+            swipeIndicators.innerHTML = '';
+            
+            // Create swipe items for all media
+            filteredMedia.forEach((media, i) => {
+                const swipeItem = document.createElement('div');
+                swipeItem.className = 'swipe-item';
+                
+                if (media.type === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'detail-video';
+                    video.controls = true;
+                    video.src = media.url;
+                    swipeItem.appendChild(video);
+                } else {
+                    const img = document.createElement('img');
+                    img.className = 'detail-image';
+                    img.src = media.url;
+                    swipeItem.appendChild(img);
+                }
+                
+                swipeContainer.appendChild(swipeItem);
+                
+                // Create indicator
+                const indicator = document.createElement('div');
+                indicator.className = 'swipe-indicator';
+                if (i === index) indicator.classList.add('active');
+                swipeIndicators.appendChild(indicator);
+            });
+            
+            // Position the container to show the selected media
+            swipeContainer.style.transform = `translateX(-${index * 100}%)`;
+            
+            // Update counter
+            updateCounter();
+            
+            // Show/hide navigation buttons
+            updateNavButtons();
+            
+            mediaDetail.classList.add('active');
+        }
 
-            if (media.type === 'video') {
-                const video = document.createElement('video');
-                video.className = 'detail-video';
-                video.controls = true;
-                video.src = media.url;
-                detailContent.appendChild(video);
-                currentVideo = video;
+        // Update the position counter
+        function updateCounter() {
+            detailCounter.textContent = `${currentMediaIndex + 1} of ${filteredMedia.length}`;
+            
+            // Update active indicator
+            const indicators = document.querySelectorAll('.swipe-indicator');
+            indicators.forEach((indicator, i) => {
+                if (i === currentMediaIndex) {
+                    indicator.classList.add('active');
+                } else {
+                    indicator.classList.remove('active');
+                }
+            });
+            
+            // Update current detail media
+            currentDetailMedia = filteredMedia[currentMediaIndex];
+            
+            // Show/hide video controls if needed
+            if (currentDetailMedia.type === 'video') {
                 videoControls.style.display = 'flex';
+                
+                // Set up video element
+                const videos = document.querySelectorAll('.detail-video');
+                currentVideo = videos[currentMediaIndex];
+                
+                // Update play/pause button
+                if (currentVideo) {
+                    currentVideo.addEventListener('play', () => {
+                        playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    });
+                    
+                    currentVideo.addEventListener('pause', () => {
+                        playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    });
+                }
             } else {
-                const img = document.createElement('img');
-                img.className = 'detail-image';
-                img.src = media.url;
-                detailContent.appendChild(img);
                 videoControls.style.display = 'none';
                 currentVideo = null;
             }
+        }
 
-            mediaDetail.classList.add('active');
+        // Update navigation buttons state
+        function updateNavButtons() {
+            if (currentMediaIndex === 0) {
+                prevButton.style.display = 'none';
+            } else {
+                prevButton.style.display = 'flex';
+            }
+            
+            if (currentMediaIndex === filteredMedia.length - 1) {
+                nextButton.style.display = 'none';
+            } else {
+                nextButton.style.display = 'flex';
+            }
+        }
+
+        // Navigate to previous media
+        function prevMedia() {
+            if (currentMediaIndex > 0) {
+                currentMediaIndex--;
+                swipeContainer.style.transform = `translateX(-${currentMediaIndex * 100}%)`;
+                updateCounter();
+                updateNavButtons();
+            }
+        }
+
+        // Navigate to next media
+        function nextMedia() {
+            if (currentMediaIndex < filteredMedia.length - 1) {
+                currentMediaIndex++;
+                swipeContainer.style.transform = `translateX(-${currentMediaIndex * 100}%)`;
+                updateCounter();
+                updateNavButtons();
+            }
         }
 
         // Toggle video play/pause
@@ -867,15 +1137,16 @@
         async function downloadSelectedMedia() {
             if (selectedMedia.size === 0) return;
 
-            // For multiple selection, download as zip
-            if (selectedMedia.size > 1) {
-                window.open('/download-all', '_blank');
-                return;
-            }
+            // Get the filenames of selected media
+            const selectedFilenames = Array.from(selectedMedia).map(index =>
+                filteredMedia[index].filename
+            );
 
-            // For single selection, download directly
-            const index = Array.from(selectedMedia)[0];
-            window.open(`/download/${filteredMedia[index].filename}`, '_blank');
+            // Create a comma-separated list of filenames
+            const filesParam = selectedFilenames.join(',');
+
+            // Open the download endpoint in a new tab
+            window.open(`/download-selected?files=${encodeURIComponent(filesParam)}`, '_blank');
         }
 
         // Show delete confirmation
@@ -914,8 +1185,121 @@
             }
         }
 
+        // Initialize swipe functionality
+        function initSwipe() {
+            // Touch events for mobile
+            swipeContainer.addEventListener('touchstart', (e) => {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+                isSwiping = true;
+            });
+
+            swipeContainer.addEventListener('touchmove', (e) => {
+                if (!isSwiping) return;
+                
+                const touchX = e.touches[0].clientX;
+                const touchY = e.touches[0].clientY;
+                
+                const diffX = touchX - touchStartX;
+                const diffY = touchY - touchStartY;
+                
+                // Only process horizontal swipes
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    e.preventDefault(); // Prevent vertical scroll during horizontal swipe
+                    swipeContainer.style.transform = `translateX(calc(-${currentMediaIndex * 100}% + ${diffX}px))`;
+                }
+            });
+
+            swipeContainer.addEventListener('touchend', (e) => {
+                if (!isSwiping) return;
+                
+                const touchEndX = e.changedTouches[0].clientX;
+                const diffX = touchEndX - touchStartX;
+                
+                // Swipe threshold (20% of screen width)
+                const threshold = window.innerWidth * 0.2;
+                
+                if (diffX > threshold) {
+                    // Swipe right - go to previous
+                    prevMedia();
+                } else if (diffX < -threshold) {
+                    // Swipe left - go to next
+                    nextMedia();
+                } else {
+                    // Return to current position
+                    swipeContainer.style.transform = `translateX(-${currentMediaIndex * 100}%)`;
+                }
+                
+                isSwiping = false;
+            });
+
+            // Mouse events for desktop
+            let mouseStartX = 0;
+            let isMouseDown = false;
+
+            swipeContainer.addEventListener('mousedown', (e) => {
+                mouseStartX = e.clientX;
+                isMouseDown = true;
+            });
+
+            swipeContainer.addEventListener('mousemove', (e) => {
+                if (!isMouseDown) return;
+                
+                const mouseX = e.clientX;
+                const diffX = mouseX - mouseStartX;
+                
+                swipeContainer.style.transform = `translateX(calc(-${currentMediaIndex * 100}% + ${diffX}px))`;
+            });
+
+            swipeContainer.addEventListener('mouseup', (e) => {
+                if (!isMouseDown) return;
+                
+                const mouseEndX = e.clientX;
+                const diffX = mouseEndX - mouseStartX;
+                
+                // Swipe threshold (20% of screen width)
+                const threshold = window.innerWidth * 0.2;
+                
+                if (diffX > threshold) {
+                    // Swipe right - go to previous
+                    prevMedia();
+                } else if (diffX < -threshold) {
+                    // Swipe left - go to next
+                    nextMedia();
+                } else {
+                    // Return to current position
+                    swipeContainer.style.transform = `translateX(-${currentMediaIndex * 100}%)`;
+                }
+                
+                isMouseDown = false;
+            });
+
+            swipeContainer.addEventListener('mouseleave', () => {
+                if (isMouseDown) {
+                    swipeContainer.style.transform = `translateX(-${currentMediaIndex * 100}%)`;
+                    isMouseDown = false;
+                }
+            });
+
+            // Click events for navigation buttons
+            prevButton.addEventListener('click', prevMedia);
+            nextButton.addEventListener('click', nextMedia);
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (mediaDetail.classList.contains('active')) {
+                    if (e.key === 'ArrowLeft') {
+                        prevMedia();
+                    } else if (e.key === 'ArrowRight') {
+                        nextMedia();
+                    }
+                }
+            });
+        }
+
         // Event listeners
         selectButton.addEventListener('click', toggleSelectionMode);
+        downloadAllButton.addEventListener('click', downloadAllMedia);
         downloadSelected.addEventListener('click', downloadSelectedMedia);
 
         // Filter button event listeners
@@ -954,18 +1338,8 @@
             }
         });
 
-        // Swipe to close detail view
-        let touchStartY = 0;
-        detailContent.addEventListener('touchstart', (e) => {
-            touchStartY = e.changedTouches[0].screenY;
-        });
-
-        detailContent.addEventListener('touchend', (e) => {
-            const touchEndY = e.changedTouches[0].screenY;
-            if (touchEndY - touchStartY > 100) {
-                closeDetail();
-            }
-        });
+        // Initialize swipe functionality
+        initSwipe();
 
         // Load media on page load
         window.addEventListener('load', loadMedia);
