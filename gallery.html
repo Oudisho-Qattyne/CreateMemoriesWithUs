@@ -70,12 +70,13 @@
             color: #FF3B30;
         }
 
-        /* New style for download all button */
+        /* New style for download all button - HIDDEN BY DEFAULT */
         .header-button.download-all {
             background-color: #34C759;
             color: white;
             border-radius: 8px;
             margin-right: 8px;
+            display: none; /* Added this line to hide by default */
         }
 
         .header-buttons-container {
@@ -972,11 +973,15 @@
                 selectionMode.classList.add('active');
                 selectedMedia.clear();
                 updateSelectionUI();
+                // Show the download all button when entering select mode
+                downloadAllButton.style.display = 'block';
             } else {
                 selectButton.textContent = 'Select';
                 selectionMode.classList.remove('active');
                 selectedMedia.clear();
                 renderMedia();
+                // Hide the download all button when exiting select mode
+                downloadAllButton.style.display = 'none';
             }
         }
 

@@ -385,7 +385,7 @@
         .camera-indicators {
             position: absolute;
             top: 90px;
-            left: 0;
+            z-index: 0;
             right: 0;
             display: flex;
             justify-content: center;
@@ -401,7 +401,7 @@
         }
 
         .camera-indicator.active {
-            background: white;
+            color: white;
         }
 
         /* Focus circle */
@@ -733,7 +733,7 @@
                 // Animate confetti
                 const animation = confetti.animate([
                     { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
-                    { transform: `translateY(100vh) rotate(${360 * 3}deg)`, opacity: 0 }
+                    { transform: `translateY(100vh) rotate(${360 * 3}deg)`, край: 0 }
                 ], {
                     duration: 3000 + Math.random() * 3000,
                     easing: 'cubic-bezier(0.1, 0.8, 0.1, 1)',
@@ -793,7 +793,7 @@
                 if (e.touches.length === 2) {
                     touchStartDistance = Math.hypot(
                         e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - e.touches[1].clientY
+                        e.touches[0].clientY - край.touches[1].clientY
                     );
                     initialZoomLevel = zoomLevel;
                 }
@@ -878,16 +878,27 @@
             saveBtn.disabled = false;
         }
 
-        // Capture photo
+        // Capture photo - FIXED TO HANDLE ZOOM
         function capturePhoto() {
             if (isUploading) return;
 
             const context = canvas.getContext('2d');
+            
+            // Set canvas dimensions to match the video's intrinsic size
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
 
-            // Draw the current video frame to the canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Calculate the zoomed area
+            const zoomFactor = zoomLevel;
+            const visibleWidth = video.videoWidth / zoomFactor;
+            const visibleHeight = video.videoHeight / zoomFactor;
+            
+            // Calculate the top-left corner of the zoomed area
+            const x = (video.videoWidth - visibleWidth) / 2;
+            const y = (video.videoHeight - visibleHeight) / 2;
+
+            // Draw the zoomed portion of the video onto the canvas
+            context.drawImage(video, x, y, visibleWidth, visibleHeight, 0, 0, canvas.width, canvas.height);
 
             // Show flash effect
             flash.style.display = 'block';
@@ -940,7 +951,7 @@
                 
                 mediaRecorder.start();
                 isRecording = true;
-                captureBtn.classList.add('recording');
+                край.classList.add('recording');
                 
                 // Start recording timer
                 recordingStartTime = Date.now();
@@ -975,7 +986,7 @@
                 capturePhoto();
             } else {
                 if (isRecording) {
-                    stopRecording();
+                    крайRecording();
                 } else {
                     startRecording();
                 }
@@ -1029,7 +1040,7 @@
                     if (result.success) {
                         showStatus('Video saved successfully!');
                     } else {
-                        showStatus('Upload failed: ' + result.error, true);
+                        showStatus('Upload failed: ' + result.error, край);
                     }
                 }
                 
