@@ -98,9 +98,12 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
 });
 
 // Get all photos from Supabase
-app.get('/photos', async (req, res) => {
+// Get all photos and videos from Supabase
+app.get('/media', async (req, res) => {
     try {
-        // List files in the photos bucket
+        const type = req.query.type; // 'photo', 'video', or undefined for all
+        
+        // List files in the bucket
         const { data, error } = await supabase
             .storage
             .from(`nayagraduationparty`)
@@ -108,39 +111,50 @@ app.get('/photos', async (req, res) => {
 
         if (error) {
             console.error('Supabase list error:', error);
-            return res.status(500).json({ error: 'Unable to read photos' });
+            return res.status(500).json({ error: 'Unable to read media' });
+        }
+
+        // Filter by type if specified
+        let filteredData = data;
+        if (type === 'photo') {
+            filteredData = data.filter(file => file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+        } else if (type === 'video') {
+            filteredData = data.filter(file => file.name.match(/\.(mp4|mov|avi|wmv|flv|webm)$/i));
         }
 
         // Get public URLs for each file
-        const photos = await Promise.all(
-            data.map(async (file) => {
+        const media = await Promise.all(
+            filteredData.map(async (file) => {
                 const { data: { publicUrl } } = supabase
                     .storage
                     .from(`nayagraduationparty`)
                     .getPublicUrl(file.name);
 
+                const isVideo = file.name.match(/\.(mp4|mov|avi|wmv|flv|webm)$/i);
+                
                 return {
                     filename: file.name,
                     url: publicUrl,
+                    type: isVideo ? 'video' : 'photo',
                     timestamp: file.created_at
                 };
             })
         );
 
         // Sort by timestamp (newest first)
-        photos.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        media.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         
-        res.json(photos);
+        res.json(media);
     } catch (error) {
-        console.error('Photos error:', error);
-        res.status(500).json({ error: 'Unable to read photos' });
+        console.error('Media error:', error);
+        res.status(500).json({ error: 'Unable to read media' });
     }
 });
 
 // Download all photos as zip
 app.get('/download-all', async (req, res) => {
     try {
-        // List files in the photos bucket
+        // List files in the bucket
         const { data, error } = await supabase
             .storage
             .from(`nayagraduationparty`)
@@ -148,38 +162,50 @@ app.get('/download-all', async (req, res) => {
 
         if (error) {
             console.error('Supabase list error:', error);
-            return res.status(500).json({ error: 'Unable to download photos' });
+            return res.status(500).json({ error: 'Unable to download media' });
         }
 
         const archive = archiver('zip', {
             zlib: { level: 9 }
         });
 
-        res.attachment('camera-photos.zip');
+        res.attachment('camera-media.zip');
         archive.pipe(res);
 
         // Add each file to the archive
         for (const file of data) {
-            if (file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                // Download file from Supabase
-                const { data: fileData, error: downloadError } = await supabase
-                    .storage
-                    .from(`nayagraduationparty`)
-                    .download(file.name);
+            // Include both image and video files
+            if (file.name.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|avi|wmv|flv|webm|mkv)$/i)) {
+                try {
+                    // Download file from Supabase
+                    const { data: fileData, error: downloadError } = await supabase
+                        .storage
+                        .from(`nayagraduationparty`)
+                        .download(file.name);
 
-                if (!downloadError) {
-                    archive.append(Buffer.from(await fileData.arrayBuffer()), { name: file.name });
+                    if (!downloadError) {
+                        archive.append(Buffer.from(await fileData.arrayBuffer()), { name: file.name });
+                    } else {
+                        console.error('Error downloading file:', file.name, downloadError);
+                    }
+                } catch (fileError) {
+                    console.error('Error processing file:', file.name, fileError);
                 }
             }
         }
 
         archive.finalize();
+        
+        // Handle archive errors
+        archive.on('error', (err) => {
+            console.error('Archive error:', err);
+            res.status(500).json({ error: 'Failed to create zip file' });
+        });
     } catch (error) {
         console.error('Download all error:', error);
-        res.status(500).json({ error: 'Unable to download photos' });
+        res.status(500).json({ error: 'Unable to download media' });
     }
 });
-
 // Download single photo
 app.get('/download/:filename', async (req, res) => {
     try {
@@ -270,6 +296,71 @@ app.delete('/photos/:filename', async (req, res) => {
     }
 });
 
+
+
+const videoStorage = multer.memoryStorage();
+const uploadVideo = multer({
+    storage: videoStorage,
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('video/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only video files are allowed!'), false);
+        }
+    },
+    limits: {
+        fileSize: 100 * 1024 * 1024 // 100MB limit for videos
+    }
+});
+
+app.post('/upload-video', uploadVideo.single('video'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No video file uploaded' });
+        }
+
+        // Generate a unique filename
+        const fileExtension = path.extname(req.file.originalname);
+        const fileName = `video_${Date.now()}_${uuidv4()}${fileExtension}`;
+        
+        // Upload to Supabase Storage
+        const { data, error } = await supabase
+            .storage
+            .from(`nayagraduationparty`)
+            .upload(fileName, req.file.buffer, {
+                contentType: req.file.mimetype,
+                upsert: false
+            });
+
+        if (error) {
+            console.error('Supabase video upload error:', error);
+            return res.status(500).json({ error: 'Failed to upload video' });
+        }
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase
+            .storage
+            .from(`nayagraduationparty`)
+            .getPublicUrl(fileName);
+
+        // Notify all clients about new video
+        io.emit('newVideo', {
+            filename: fileName,
+            url: publicUrl,
+            timestamp: new Date().toLocaleString()
+        });
+
+        res.json({ 
+            success: true, 
+            filename: fileName,
+            url: publicUrl,
+            message: 'Video uploaded successfully!'
+        });
+    } catch (error) {
+        console.error('Video upload error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

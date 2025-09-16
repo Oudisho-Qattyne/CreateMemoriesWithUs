@@ -28,11 +28,10 @@
         /* Graduation Message Card */
         .graduation-card {
             position: fixed;
-            top: 50%;
+            top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 85%;
-            max-width: 500px;
+            width: 100%;
             background: linear-gradient(135deg, #8a2387, #e94057, #f27121);
             border-radius: 20px;
             padding: 30px;
@@ -175,6 +174,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.3s ease;
         }
 
         /* Front camera view (no mirroring) */
@@ -223,6 +223,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
 
         .shutter-button:active {
@@ -233,6 +234,28 @@
         .shutter-button:disabled {
             background: #888;
             cursor: not-allowed;
+        }
+
+        /* Recording indicator */
+        .recording-indicator {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: red;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .recording .recording-indicator {
+            opacity: 1;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
         .camera-switch {
@@ -273,6 +296,7 @@
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
+            cursor: pointer;
         }
 
         .capture-mode.active {
@@ -331,8 +355,8 @@
         }
 
         .preview-btn {
-            width: 100px;
-            height: 100px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.2);
             backdrop-filter: blur(10px);
@@ -341,7 +365,7 @@
             justify-content: center;
             border: none;
             color: white;
-            font-size: 50px;
+            font-size: 30px;
             touch-action: manipulation;
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
@@ -351,7 +375,6 @@
             background: rgba(255, 255, 255, 0.9);
             color: black;
         }
-
 
         .preview-btn:disabled {
             opacity: 0.5;
@@ -494,6 +517,55 @@
             z-index: 2500;
             display: none;
         }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: absolute;
+            right: 20px;
+            bottom: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            color: white;
+            font-size: 18px;
+        }
+
+        /* Video player in preview */
+        #previewVideo {
+            width: 100%;
+            height: 70%;
+            object-fit: contain;
+            display: none;
+        }
+
+        /* Recording timer */
+        .recording-timer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: red;
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: none;
+            z-index: 11;
+        }
     </style>
 </head>
 
@@ -515,6 +587,9 @@
     <div class="loading-spinner" id="loadingSpinner"></div>
 
     <div class="camera-container" id="cameraContainer">
+        <!-- Recording timer -->
+        <div class="recording-timer" id="recordingTimer">00:00</div>
+        
         <!-- Camera viewfinder -->
         <div class="camera-viewfinder" id="cameraViewfinder">
             <video id="video" autoplay playsinline></video>
@@ -522,6 +597,12 @@
 
             <!-- Focus circle -->
             <div class="focus-circle"></div>
+        </div>
+
+        <!-- Zoom controls -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomIn">+</button>
+            <button class="zoom-btn" id="zoomOut">-</button>
         </div>
 
         <!-- Camera controls -->
@@ -532,11 +613,19 @@
                     alt="Last photo">
             </div>
 
-            <button id="captureBtn" class="shutter-button"></button>
+            <button id="captureBtn" class="shutter-button">
+                <div class="recording-indicator"></div>
+            </button>
 
             <button id="cameraSwitch" class="camera-switch">
                 <i class="fas fa-sync-alt"></i>
             </button>
+        </div>
+
+        <!-- Capture modes -->
+        <div class="capture-modes">
+            <div class="capture-mode active" data-mode="photo">Photo</div>
+            <div class="capture-mode" data-mode="video">Video</div>
         </div>
 
         <!-- Status message -->
@@ -546,6 +635,7 @@
     <!-- Preview container -->
     <div class="preview-container" id="previewContainer">
         <img id="previewImage" class="preview-image" src="" alt="Preview">
+        <video id="previewVideo" controls></video>
         <div class="preview-controls">
             <button id="retakeBtn" class="preview-btn">
                 <i class="fas fa-times"></i>
@@ -564,6 +654,7 @@
         const cameraSwitch = document.getElementById('cameraSwitch');
         const previewContainer = document.getElementById('previewContainer');
         const previewImage = document.getElementById('previewImage');
+        const previewVideo = document.getElementById('previewVideo');
         const retakeBtn = document.getElementById('retakeBtn');
         const saveBtn = document.getElementById('saveBtn');
         const lastPhoto = document.getElementById('lastPhoto');
@@ -576,6 +667,10 @@
         const uploadOverlay = document.getElementById('uploadOverlay');
         const cameraContainer = document.getElementById('cameraContainer');
         const cameraViewfinder = document.getElementById('cameraViewfinder');
+        const recordingTimer = document.getElementById('recordingTimer');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const captureModes = document.querySelectorAll('.capture-mode');
         const flash = document.createElement('div');
         flash.className = 'flash';
         document.body.appendChild(flash);
@@ -583,8 +678,20 @@
         // State variables
         let stream = null;
         let currentPhoto = null;
+        let currentVideo = null;
         let facingMode = 'environment'; // 'environment' for back camera, 'user' for front
         let isUploading = false;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let zoomLevel = 1;
+        let maxZoom = 4;
+        let minZoom = 1;
+        let captureMode = 'photo'; // 'photo' or 'video'
+        let recordingStartTime = null;
+        let recordingTimerInterval = null;
+        let initialPinchDistance = null;
+        let initialZoomLevel = null;
 
         // Show graduation card only once per client (using localStorage)
         function showGraduationCard() {
@@ -648,18 +755,18 @@
                     stream.getTracks().forEach(track => track.stop());
                 }
 
-                // Get camera access
+                // Get camera access with zoom capability
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: facingMode,
                         width: { ideal: 1920 },
                         height: { ideal: 1080 }
                     },
-                    audio: false
+                    audio: captureMode === 'video' // Enable audio for video mode
                 });
 
                 video.srcObject = stream;
-
+                video.muted = true
                 // Apply front camera class if needed (remove mirroring)
                 if (facingMode === 'user') {
                     cameraViewfinder.classList.add('front-camera');
@@ -670,10 +777,50 @@
                 // Set up focus effect on video tap
                 video.addEventListener('click', handleFocus);
 
+                // Set up pinch-to-zoom
+                setupPinchToZoom();
+
             } catch (error) {
                 console.error('Camera error:', error);
                 showStatus('Camera error: ' + error.message, true);
             }
+        }
+
+        // Setup pinch-to-zoom functionality
+        function setupPinchToZoom() {
+            let touchStartDistance = 0;
+            
+            video.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 2) {
+                    touchStartDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    initialZoomLevel = zoomLevel;
+                }
+            });
+            
+            video.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const touchDistance = Math.hypot(
+                        e.touches[0].clientX - e.touches[1].clientX,
+                        e.touches[0].clientY - e.touches[1].clientY
+                    );
+                    
+                    const zoomFactor = touchDistance / touchStartDistance;
+                    const newZoom = initialZoomLevel * zoomFactor;
+                    
+                    // Apply zoom limits
+                    setZoom(Math.max(minZoom, Math.min(maxZoom, newZoom)));
+                }
+            });
+        }
+
+        // Set zoom level
+        function setZoom(level) {
+            zoomLevel = level;
+            video.style.transform = `scale(${zoomLevel})`;
         }
 
         // Show status message
@@ -756,7 +903,84 @@
             // Convert to data URL and show preview
             currentPhoto = canvas.toDataURL('image/jpeg');
             previewImage.src = currentPhoto;
+            previewImage.style.display = 'block';
+            previewVideo.style.display = 'none';
             previewContainer.classList.add('active');
+        }
+
+        // Start video recording
+        function startRecording() {
+            if (isUploading || isRecording) return;
+            
+            recordedChunks = [];
+            
+            try {
+                const options = { mimeType: 'video/webm; codecs=vp9' };
+                mediaRecorder = new MediaRecorder(stream, options);
+                
+                mediaRecorder.ondataavailable = function(e) {
+                    if (e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = function() {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    currentVideo = URL.createObjectURL(blob);
+                    previewVideo.src = currentVideo;
+                    previewImage.style.display = 'none';
+                    previewVideo.style.display = 'block';
+                    previewContainer.classList.add('active');
+                    
+                    // Reset recording state
+                    isRecording = false;
+                    captureBtn.classList.remove('recording');
+                    recordingTimer.style.display = 'none';
+                    clearInterval(recordingTimerInterval);
+                };
+                
+                mediaRecorder.start();
+                isRecording = true;
+                captureBtn.classList.add('recording');
+                
+                // Start recording timer
+                recordingStartTime = Date.now();
+                recordingTimer.style.display = 'block';
+                updateRecordingTimer();
+                recordingTimerInterval = setInterval(updateRecordingTimer, 1000);
+                
+            } catch (e) {
+                console.error('MediaRecorder error:', e);
+                showStatus('Video recording not supported', true);
+            }
+        }
+
+        // Update recording timer
+        function updateRecordingTimer() {
+            const elapsedTime = Math.floor((Date.now() - recordingStartTime) / 1000);
+            const minutes = Math.floor(elapsedTime / 60).toString().padStart(2, '0');
+            const seconds = (elapsedTime % 60).toString().padStart(2, '0');
+            recordingTimer.textContent = `${minutes}:${seconds}`;
+        }
+
+        // Stop video recording
+        function stopRecording() {
+            if (mediaRecorder && isRecording) {
+                mediaRecorder.stop();
+            }
+        }
+
+        // Handle capture button click based on mode
+        function handleCapture() {
+            if (captureMode === 'photo') {
+                capturePhoto();
+            } else {
+                if (isRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+            }
         }
 
         // Save photo to server
@@ -765,55 +989,97 @@
 
             try {
                 showLoading();
-                showStatus('Uploading...');
-                const blob = await fetch(currentPhoto).then(r => r.blob());
-                const formData = new FormData();
-                formData.append('photo', blob, `photo_${Date.now()}.jpg`);
-
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                const result = await response.json();
-                if (result.success) {
-                    // Update the gallery preview
-                    lastPhoto.src = currentPhoto;
-                    showStatus('Photo saved successfully!');
-
-                    // Hide preview after a short delay
-                    setTimeout(() => {
-                        previewContainer.classList.remove('active');
-                        hideLoading()
-                    }, 1500);
+                
+                if (captureMode === 'photo') {
+                    showStatus('Uploading photo...');
+                    const blob = await fetch(currentPhoto).then(r => r.blob());
+                    const formData = new FormData();
+                    formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+                    
+                    // Send to server
+                    const response = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        // Update the gallery preview
+                        lastPhoto.src = currentPhoto;
+                        showStatus('Photo saved successfully!');
+                    } else {
+                        showStatus('Upload failed: ' + result.error, true);
+                    }
                 } else {
-                    showStatus('Upload failed: ' + result.error, true);
-                    hideLoading()
+                    showStatus('Uploading video...');
+                    
+                    // Convert video URL to blob
+                    const response = await fetch(currentVideo);
+                    const blob = await response.blob();
+                    
+                    const formData = new FormData();
+                    formData.append('video', blob, `video_${Date.now()}.webm`);
+                    
+                    // Send to server
+                    const uploadResponse = await fetch('/upload-video', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await uploadResponse.json();
+                    if (result.success) {
+                        showStatus('Video saved successfully!');
+                    } else {
+                        showStatus('Upload failed: ' + result.error, true);
+                    }
                 }
+                
+                // Hide preview after a short delay
+                setTimeout(() => {
+                    previewContainer.classList.remove('active');
+                    hideLoading();
+                }, 1500);
+                
             } catch (error) {
                 console.error('Upload error:', error);
                 showStatus('Upload error: ' + error.message, true);
-                hideLoading()
+                hideLoading();
             }
         }
 
         // Switch between front and back camera
         async function switchCamera() {
-            if (isUploading) return;
+            if (isUploading || isRecording) return;
 
             facingMode = facingMode === 'environment' ? 'user' : 'environment';
             await initCamera();
         }
 
+        // Switch capture mode
+        function switchCaptureMode(mode) {
+            if (isRecording) return;
+            
+            captureMode = mode;
+            captureModes.forEach(m => {
+                if (m.dataset.mode === mode) {
+                    m.classList.add('active');
+                } else {
+                    m.classList.remove('active');
+                }
+            });
+            
+            // Reinitialize camera with correct audio settings
+            initCamera();
+        }
+
         // Navigate to gallery
         function goToGallery() {
-            if (isUploading) return;
-            window.location.href = '/gallery'; // Uncomment when you have a gallery page
-            // showStatus('Gallery feature coming soon!');
+            if (isUploading || isRecording) return;
+            window.location.href = '/gallery';
         }
 
         // Event listeners
-        captureBtn.addEventListener('click', capturePhoto);
+        captureBtn.addEventListener('click', handleCapture);
         cameraSwitch.addEventListener('click', switchCamera);
         retakeBtn.addEventListener('click', () => {
             if (isUploading) return;
@@ -822,6 +1088,22 @@
         saveBtn.addEventListener('click', savePhoto);
         galleryPreview.addEventListener('click', goToGallery);
         closeGraduationCard.addEventListener('click', hideGraduationCard);
+        
+        // Zoom controls
+        zoomInBtn.addEventListener('click', () => {
+            setZoom(Math.min(maxZoom, zoomLevel + 0.25));
+        });
+        
+        zoomOutBtn.addEventListener('click', () => {
+            setZoom(Math.max(minZoom, zoomLevel - 0.25));
+        });
+        
+        // Capture mode selection
+        captureModes.forEach(mode => {
+            mode.addEventListener('click', () => {
+                switchCaptureMode(mode.dataset.mode);
+            });
+        });
 
         // Initialize camera on load
         window.addEventListener('load', () => {
