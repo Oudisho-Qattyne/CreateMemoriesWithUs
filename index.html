@@ -733,7 +733,7 @@
                 // Animate confetti
                 const animation = confetti.animate([
                     { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
-                    { transform: `translateY(100vh) rotate(${360 * 3}deg)`, край: 0 }
+                    { transform: `translateY(100vh) rotate(${360 * 3}deg)`, opacity: 0 }
                 ], {
                     duration: 3000 + Math.random() * 3000,
                     easing: 'cubic-bezier(0.1, 0.8, 0.1, 1)',
@@ -793,7 +793,7 @@
                 if (e.touches.length === 2) {
                     touchStartDistance = Math.hypot(
                         e.touches[0].clientX - e.touches[1].clientX,
-                        e.touches[0].clientY - край.touches[1].clientY
+                        e.touches[0].clientY - e.touches[1].clientY
                     );
                     initialZoomLevel = zoomLevel;
                 }
@@ -951,7 +951,7 @@
                 
                 mediaRecorder.start();
                 isRecording = true;
-                край.classList.add('recording');
+                // край.classList.add('recording');
                 
                 // Start recording timer
                 recordingStartTime = Date.now();
@@ -986,7 +986,7 @@
                 capturePhoto();
             } else {
                 if (isRecording) {
-                    крайRecording();
+                    stopRecording();
                 } else {
                     startRecording();
                 }
@@ -1040,7 +1040,7 @@
                     if (result.success) {
                         showStatus('Video saved successfully!');
                     } else {
-                        showStatus('Upload failed: ' + result.error, край);
+                        showStatus('Upload failed: ' + result.error);
                     }
                 }
                 
